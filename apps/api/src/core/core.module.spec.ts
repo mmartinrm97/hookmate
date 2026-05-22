@@ -1,8 +1,8 @@
-import { describe, expect, it, vi, beforeAll, afterAll } from 'vitest';
 import { Test } from '@nestjs/testing';
 import { getDataSourceToken } from '@nestjs/typeorm';
-import { CoreModule } from './core.module.js';
-import { AppConfigService } from './config/app-config.service.js';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { AppConfigService } from './config/app-config.service';
+import { CoreModule } from './core.module';
 
 describe('CoreModule', () => {
   beforeAll(() => {

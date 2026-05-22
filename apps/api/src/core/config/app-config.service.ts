@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { TypeOrmModuleOptions } from '@nestjs/typeorm';
+import type { Env } from './env.schema';
 
 export interface AppRuntimeConfig {
   apiBasePath: string;
@@ -17,38 +18,32 @@ export class AppConfigService {
   readonly apiBasePath = 'api';
   readonly docsPath = 'api/docs';
 
-  constructor(@Inject(ConfigService) private readonly configService: ConfigService) {}
+  constructor(@Inject(ConfigService) private readonly configService: ConfigService<Env, true>) {}
 
   getRuntimeConfig(): AppRuntimeConfig {
     return {
       apiBasePath: this.apiBasePath,
-      appEnv: this.configService.get<string>('NODE_ENV') ?? 'development',
-      awsRegion:
-        this.configService.get<string>('AWS_REGION') ??
-        this.configService.get<string>('AWS_DEFAULT_REGION') ??
-        'us-east-1',
-      corsOrigin: this.configService.get<string>('CORS_ORIGIN') ?? 'http://localhost:5173',
-      port: this.getPort(),
+      appEnv: this.configService.get('NODE_ENV'),
+      awsRegion: this.configService.get('AWS_REGION'),
+      corsOrigin: this.configService.get('CORS_ORIGIN'),
+      port: this.configService.get('PORT'),
       docsPath: this.docsPath,
-      appVersion: this.configService.get<string>('npm_package_version') ?? '0.0.1',
+      appVersion: process.env['npm_package_version'] ?? '0.0.1',
     };
   }
 
   getPort(): number {
-    const rawPort = this.configService.get<string>('PORT') ?? '3000';
-    const port = Number.parseInt(rawPort, 10);
-
-    return Number.isNaN(port) ? 3000 : port;
+    return this.configService.get('PORT');
   }
 
   getDatabaseConfig(): TypeOrmModuleOptions {
     return {
       type: 'postgres',
-      host: this.configService.get<string>('POSTGRES_HOST') ?? 'localhost',
-      port: Number.parseInt(this.configService.get<string>('POSTGRES_PORT') ?? '5432', 10),
-      username: this.configService.getOrThrow<string>('POSTGRES_USER'),
-      password: this.configService.getOrThrow<string>('POSTGRES_PASSWORD'),
-      database: this.configService.getOrThrow<string>('POSTGRES_DB'),
+      host: this.configService.get('POSTGRES_HOST'),
+      port: this.configService.get('POSTGRES_PORT'),
+      username: this.configService.get('POSTGRES_USER'),
+      password: this.configService.get('POSTGRES_PASSWORD'),
+      database: this.configService.get('POSTGRES_DB'),
       synchronize: true,
       logging: false,
       autoLoadEntities: true,
