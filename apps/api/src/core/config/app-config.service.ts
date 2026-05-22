@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import type { TypeOrmModuleOptions } from '@nestjs/typeorm';
 
 export interface AppRuntimeConfig {
   apiBasePath: string;
@@ -38,5 +39,19 @@ export class AppConfigService {
     const port = Number.parseInt(rawPort, 10);
 
     return Number.isNaN(port) ? 3000 : port;
+  }
+
+  getDatabaseConfig(): TypeOrmModuleOptions {
+    return {
+      type: 'postgres',
+      host: this.configService.get<string>('POSTGRES_HOST') ?? 'localhost',
+      port: Number.parseInt(this.configService.get<string>('POSTGRES_PORT') ?? '5432', 10),
+      username: this.configService.getOrThrow<string>('POSTGRES_USER'),
+      password: this.configService.getOrThrow<string>('POSTGRES_PASSWORD'),
+      database: this.configService.getOrThrow<string>('POSTGRES_DB'),
+      synchronize: true,
+      logging: false,
+      autoLoadEntities: true,
+    };
   }
 }

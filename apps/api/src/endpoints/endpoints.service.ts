@@ -1,10 +1,13 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import type {
   CreateHookMateEndpointInput,
   HookMateEndpoint,
   HookMateEndpointStatus,
 } from '@hookmate/shared';
 import { ulid } from 'ulid';
+import { Endpoint } from './entities/endpoint.entity.js';
 
 const DEFAULT_MAX_RETRIES = 5;
 const DEFAULT_RETRY_BASE_DELAY_MS = 5_000;
@@ -12,68 +15,80 @@ const DEFAULT_DLQ_THRESHOLD = 100;
 
 @Injectable()
 export class EndpointsService {
-  private readonly endpoints = new Map<string, HookMateEndpoint>();
+  constructor(
+    @InjectRepository(Endpoint)
+    private readonly repo: Repository<Endpoint>,
+  ) {}
 
-  list(): HookMateEndpoint[] {
-    const endpoints = Array.from(this.endpoints.values());
+  async list(): Promise<HookMateEndpoint[]> {
+    const entities = await this.repo.find({ order: { createdAt: 'DESC' } });
 
-    endpoints.sort((left: HookMateEndpoint, right: HookMateEndpoint) =>
-      left.createdAt.localeCompare(right.createdAt),
-    );
-
-    return endpoints;
+    return entities.map((entity) => entity.toPrimitive());
   }
 
-  getById(id: string): HookMateEndpoint {
-    const endpoint = this.endpoints.get(id);
+  async getById(id: string): Promise<HookMateEndpoint> {
+    const entity = await this.repo.findOne({ where: { id } });
 
-    if (!endpoint) {
+    if (!entity) {
       throw new NotFoundException(`Endpoint ${id} was not found.`);
     }
 
-    return endpoint;
+    return entity.toPrimitive();
   }
 
-  create(input: CreateHookMateEndpointInput): HookMateEndpoint {
+  async create(input: CreateHookMateEndpointInput): Promise<HookMateEndpoint> {
     this.assertCreateInput(input);
 
-    const now = new Date().toISOString();
-    const endpoint: HookMateEndpoint = {
+    const entity = this.repo.create({
       id: ulid(),
       name: input.name.trim(),
       destinationUrl: input.destinationUrl.trim(),
-      status: 'active',
+      secret: input.secret,
+      status: 'active' as HookMateEndpointStatus,
       maxRetries: input.maxRetries ?? DEFAULT_MAX_RETRIES,
       retryBaseDelayMs: input.retryBaseDelayMs ?? DEFAULT_RETRY_BASE_DELAY_MS,
       dlqThreshold: input.dlqThreshold ?? DEFAULT_DLQ_THRESHOLD,
-      createdAt: now,
-      updatedAt: now,
-    };
+    });
 
-    this.endpoints.set(endpoint.id, endpoint);
+    const saved = await this.repo.save(entity);
 
-    return endpoint;
+    return saved.toPrimitive();
   }
 
-  pause(id: string): HookMateEndpoint {
+  async pause(id: string): Promise<HookMateEndpoint> {
     return this.updateStatus(id, 'paused');
   }
 
-  resume(id: string): HookMateEndpoint {
+  async resume(id: string): Promise<HookMateEndpoint> {
     return this.updateStatus(id, 'active');
   }
 
-  private updateStatus(id: string, status: HookMateEndpointStatus): HookMateEndpoint {
-    const endpoint = this.getById(id);
-    const updatedEndpoint: HookMateEndpoint = {
-      ...endpoint,
-      status,
-      updatedAt: new Date().toISOString(),
-    };
+  private async updateStatus(
+    id: string,
+    status: HookMateEndpointStatus,
+  ): Promise<HookMateEndpoint> {
+    const entity = await this.repo.findOne({ where: { id } });
 
-    this.endpoints.set(id, updatedEndpoint);
+    if (!entity) {
+      throw new NotFoundException(`Endpoint ${id} was not found.`);
+    }
 
-    return updatedEndpoint;
+    if (status === 'paused' && entity.status !== 'active') {
+      throw new BadRequestException(
+        `Cannot pause endpoint ${id}: current status is '${entity.status}', expected 'active'.`,
+      );
+    }
+
+    if (status === 'active' && entity.status !== 'paused') {
+      throw new BadRequestException(
+        `Cannot resume endpoint ${id}: current status is '${entity.status}', expected 'paused'.`,
+      );
+    }
+
+    entity.status = status;
+    const saved = await this.repo.save(entity);
+
+    return saved.toPrimitive();
   }
 
   private assertCreateInput(input: CreateHookMateEndpointInput): void {

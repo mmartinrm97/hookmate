@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsInt, IsNotEmpty, IsOptional, IsString, IsUrl, Min } from 'class-validator';
+import { IsInt, IsNotEmpty, IsOptional, IsString, IsUrl, MaxLength, Min } from 'class-validator';
 import type { CreateHookMateEndpointInput } from '@hookmate/shared';
 
 export class CreateEndpointDto implements CreateHookMateEndpointInput {
@@ -34,4 +34,10 @@ export class CreateEndpointDto implements CreateHookMateEndpointInput {
   @IsInt()
   @Min(1)
   dlqThreshold?: number;
+
+  @ApiPropertyOptional({ example: 'whsec_abc123' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  secret?: string;
 }
