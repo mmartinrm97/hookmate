@@ -38,5 +38,10 @@ strictDepBuilds: true
 # onlyBuiltDependencies / ignoredBuiltDependencies are deprecated — use allowBuilds.
 allowBuilds:
   '@nestjs/core': true
+  '@scarf/scarf': true
   esbuild: true
   msgpackr-extract: true
+
+catalog:
+  '@types/node': ^24.12.3
+  typescript: ^6.0.3
