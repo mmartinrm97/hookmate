@@ -26,3 +26,13 @@ export interface DlqCreateInput {
   attempts_json: unknown[];
   endpoint_snapshot: Record<string, unknown>;
 }
+
+export type ProcessResultType = 'delivered' | 'failed_retry' | 'dead_lettered' | 'skipped';
+
+export interface ProcessResult {
+  status: ProcessResultType;
+  eventId: string;
+  endpointId: string;
+  attemptNumber: number;
+  destinationUrl?: string;
+}
