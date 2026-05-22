@@ -1,0 +1,47 @@
+version: 2
+
+updates:
+  # Root workspace + all pnpm packages
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '09:00'
+      timezone: America/Argentina/Buenos_Aires
+    # Delay merging until a new version is at least 7 days old.
+    # Mirrors the minimumReleaseAge philosophy — avoid same-day supply chain attacks.
+    cooldown:
+      default-days: 7
+    # Open separate PRs for each package to keep review diffs focused.
+    open-pull-requests-limit: 10
+    # Group patch and minor updates to reduce PR noise; majors stay separate.
+    groups:
+      patch-updates:
+        update-types:
+          - patch
+      minor-updates:
+        update-types:
+          - minor
+    labels:
+      - dependencies
+    commit-message:
+      prefix: chore
+      include: scope
+
+  # GitHub Actions
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '09:00'
+      timezone: America/Argentina/Buenos_Aires
+    cooldown:
+      default-days: 7
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - ci
+    commit-message:
+      prefix: chore(ci)
