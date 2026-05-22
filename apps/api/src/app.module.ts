@@ -7,6 +7,7 @@ import { EndpointsModule } from './endpoints/endpoints.module';
 import { EventsModule } from './events/events.module';
 import { HealthModule } from './health/health.module';
 import { IngestionModule } from './ingestion/ingestion.module';
+import { ProcessorModule } from './processor/processor.module';
 import { RoutingRulesModule } from './routing-rules/routing-rules.module';
 import { SqsModule } from './sqs/sqs.module';
 
@@ -22,6 +23,7 @@ import { SqsModule } from './sqs/sqs.module';
     AiSummariesModule,
     SqsModule,
     IngestionModule,
+    ProcessorModule,
   ],
 })
 export class AppModule {}
