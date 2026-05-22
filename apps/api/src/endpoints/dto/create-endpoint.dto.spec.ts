@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest';
 import { validate } from 'class-validator';
-import { CreateEndpointDto } from './create-endpoint.dto.js';
+import { describe, expect, it } from 'vitest';
+import { CreateEndpointDto } from './create-endpoint.dto';
 
 describe('CreateEndpointDto', () => {
   it('accepts valid secret', async () => {

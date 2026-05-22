@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Endpoint } from './endpoint.entity.js';
+import { Endpoint } from './endpoint.entity';
 
 describe('Endpoint', () => {
   describe('generateId (@BeforeInsert)', () => {

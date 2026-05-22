@@ -1,10 +1,10 @@
-import { describe, expect, it, beforeEach, vi } from 'vitest';
+import type { HookMateEndpoint } from '@hookmate/shared';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
-import { EndpointsService } from './endpoints.service.js';
-import { Endpoint } from './entities/endpoint.entity.js';
-import type { HookMateEndpoint } from '@hookmate/shared';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { EndpointsService } from './endpoints.service';
+import { Endpoint } from './entities/endpoint.entity';
 
 function createMockEntity(overrides: Partial<Endpoint> = {}): Endpoint {
   const now = new Date('2026-01-15T12:00:00Z');

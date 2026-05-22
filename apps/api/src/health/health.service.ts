@@ -1,6 +1,6 @@
-import { Inject, Injectable } from '@nestjs/common';
 import type { HookMateHealthSnapshot } from '@hookmate/shared';
-import { AppConfigService } from '../core/config/app-config.service.js';
+import { Inject, Injectable } from '@nestjs/common';
+import { AppConfigService } from '../core/config/app-config.service';
 
 @Injectable()
 export class HealthService {
