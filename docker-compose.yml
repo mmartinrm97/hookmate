@@ -1,14 +1,12 @@
-version: '3.9'
-
 services:
   floci:
     image: floci/floci:latest
     container_name: hookmate-floci
     ports:
-      - '4566:4566'
+      - '${FLOCI_PORT:-4566}:4566'
     environment:
       FLOCI_HOSTNAME: floci
-      FLOCI_STORAGE_MODE: memory
+      FLOCI_STORAGE_MODE: persistent
       FLOCI_DEFAULT_REGION: us-east-1
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
