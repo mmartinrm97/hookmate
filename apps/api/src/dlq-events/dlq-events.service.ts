@@ -4,6 +4,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { DlqEvent } from './entities/dlq-event.entity';
 
+export interface CreateDlqEventInput {
+  eventId: string;
+  endpointId: string;
+  failureReason: string | null;
+  attemptsJson: unknown[];
+  endpointSnapshot: Record<string, unknown>;
+}
+
 @Injectable()
 export class DlqEventsService {
   constructor(
@@ -25,5 +33,19 @@ export class DlqEventsService {
     }
 
     return entity.toPrimitive();
+  }
+
+  async create(input: CreateDlqEventInput): Promise<HookMateDlqEvent> {
+    const entity = this.repo.create({
+      eventId: { id: input.eventId } as never,
+      endpointId: { id: input.endpointId } as never,
+      failureReason: input.failureReason,
+      attemptsJson: input.attemptsJson,
+      endpointSnapshot: input.endpointSnapshot,
+    });
+
+    const saved = await this.repo.save(entity);
+
+    return saved.toPrimitive();
   }
 }

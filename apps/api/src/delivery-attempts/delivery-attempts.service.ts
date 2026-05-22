@@ -1,8 +1,18 @@
-import type { HookMateDeliveryAttempt } from '@hookmate/shared';
+import type { HookMateDeliveryAttempt, HookMateDeliveryAttemptStatus } from '@hookmate/shared';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { DeliveryAttempt } from './entities/delivery-attempt.entity';
+
+export interface CreateDeliveryAttemptInput {
+  eventId: string;
+  attemptNumber: number;
+  destinationUrl: string;
+  httpStatus: number | null;
+  responseBody: string | null;
+  latencyMs: number | null;
+  status: HookMateDeliveryAttemptStatus;
+}
 
 @Injectable()
 export class DeliveryAttemptsService {
@@ -25,5 +35,21 @@ export class DeliveryAttemptsService {
     }
 
     return entity.toPrimitive();
+  }
+
+  async create(input: CreateDeliveryAttemptInput): Promise<HookMateDeliveryAttempt> {
+    const entity = this.repo.create({
+      eventId: { id: input.eventId } as never,
+      attemptNumber: input.attemptNumber,
+      destinationUrl: input.destinationUrl,
+      httpStatus: input.httpStatus,
+      responseBody: input.responseBody,
+      latencyMs: input.latencyMs,
+      status: input.status,
+    });
+
+    const saved = await this.repo.save(entity);
+
+    return saved.toPrimitive();
   }
 }

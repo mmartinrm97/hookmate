@@ -56,6 +56,7 @@ describe('EventsService', () => {
       findOne: vi.fn(),
       create: vi.fn(),
       save: vi.fn(),
+      update: vi.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -195,6 +196,68 @@ describe('EventsService', () => {
       mockRepo.save.mockRejectedValue(new Error('DB connection lost'));
 
       await expect(service.create(input)).rejects.toThrow('DB connection lost');
+    });
+  });
+
+  describe('updateStatus()', () => {
+    it('transitions to delivered and sets deliveredAt when status is delivered', async () => {
+      const existingId = 'evt-to-deliver';
+      const now = new Date('2026-01-15T13:00:00Z');
+      const entity = createMockEntity({
+        id: existingId,
+        status: 'received',
+        deliveredAt: null,
+      });
+      const updatedEntity = createMockEntity({
+        id: existingId,
+        status: 'delivered',
+        deliveredAt: now,
+      });
+      mockRepo.findOne.mockResolvedValueOnce(entity);
+      mockRepo.save.mockResolvedValue(updatedEntity);
+      mockRepo.findOne.mockResolvedValueOnce(updatedEntity);
+
+      const result = await service.updateStatus(existingId, 'delivered', now);
+
+      expect(result.status).toBe('delivered');
+      expect(result.deliveredAt).toBe(now.toISOString());
+      expect(mockRepo.findOne).toHaveBeenCalledWith({ where: { id: existingId } });
+      expect(mockRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ status: 'delivered', deliveredAt: now }),
+      );
+    });
+
+    it('transitions to dead_lettered without setting deliveredAt', async () => {
+      const existingId = 'evt-to-dlq';
+      const entity = createMockEntity({
+        id: existingId,
+        status: 'failed',
+        deliveredAt: null,
+      });
+      const updatedEntity = createMockEntity({
+        id: existingId,
+        status: 'dead_lettered',
+        deliveredAt: null,
+      });
+      mockRepo.findOne.mockResolvedValueOnce(entity);
+      mockRepo.save.mockResolvedValue(updatedEntity);
+      mockRepo.findOne.mockResolvedValueOnce(updatedEntity);
+
+      const result = await service.updateStatus(existingId, 'dead_lettered');
+
+      expect(result.status).toBe('dead_lettered');
+      expect(result.deliveredAt).toBeNull();
+      expect(mockRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ status: 'dead_lettered' }),
+      );
+    });
+
+    it('throws NotFoundException when event does not exist', async () => {
+      mockRepo.findOne.mockResolvedValueOnce(null);
+
+      await expect(service.updateStatus('nonexistent', 'delivered')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 });

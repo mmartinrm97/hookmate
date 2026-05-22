@@ -44,12 +44,16 @@ describe('DeliveryAttemptsService', () => {
   let mockRepo: {
     find: ReturnType<typeof vi.fn>;
     findOne: ReturnType<typeof vi.fn>;
+    create: ReturnType<typeof vi.fn>;
+    save: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(async () => {
     mockRepo = {
       find: vi.fn(),
       findOne: vi.fn(),
+      create: vi.fn(),
+      save: vi.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -117,6 +121,79 @@ describe('DeliveryAttemptsService', () => {
       mockRepo.findOne.mockResolvedValue(null);
 
       await expect(service.getById(999)).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('create()', () => {
+    it('records a successful delivery attempt with http_status and latency', async () => {
+      const input = {
+        eventId: 'evt-01JHQ',
+        attemptNumber: 1,
+        destinationUrl: 'https://example.com/hook',
+        httpStatus: 200,
+        responseBody: '{"ok":true}',
+        latencyMs: 150,
+        status: 'success' as const,
+      };
+      const entity = createMockEntity({
+        id: 100,
+        eventId: { id: input.eventId } as never,
+        attemptNumber: input.attemptNumber,
+        destinationUrl: input.destinationUrl,
+        httpStatus: input.httpStatus,
+        responseBody: input.responseBody,
+        latencyMs: input.latencyMs,
+        status: input.status,
+      });
+      mockRepo.create.mockReturnValue(entity);
+      mockRepo.save.mockResolvedValue(entity);
+
+      const result = await service.create(input);
+
+      expect(result.id).toBe(100);
+      expect(result.eventId).toBe('evt-01JHQ');
+      expect(result.httpStatus).toBe(200);
+      expect(result.latencyMs).toBe(150);
+      expect(result.status).toBe('success');
+      expect(mockRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          eventId: { id: 'evt-01JHQ' },
+          destinationUrl: 'https://example.com/hook',
+          status: 'success',
+        }),
+      );
+      expect(mockRepo.save).toHaveBeenCalledWith(entity);
+    });
+
+    it('records a timeout attempt with null http_status', async () => {
+      const input = {
+        eventId: 'evt-02JHQ',
+        attemptNumber: 1,
+        destinationUrl: 'https://example.com/hook',
+        httpStatus: null,
+        responseBody: null,
+        latencyMs: null,
+        status: 'timeout' as const,
+      };
+      const entity = createMockEntity({
+        id: 101,
+        eventId: { id: input.eventId } as never,
+        attemptNumber: input.attemptNumber,
+        destinationUrl: input.destinationUrl,
+        httpStatus: input.httpStatus,
+        responseBody: input.responseBody,
+        latencyMs: input.latencyMs,
+        status: input.status,
+      });
+      mockRepo.create.mockReturnValue(entity);
+      mockRepo.save.mockResolvedValue(entity);
+
+      const result = await service.create(input);
+
+      expect(result.status).toBe('timeout');
+      expect(result.httpStatus).toBeNull();
+      expect(result.latencyMs).toBeNull();
+      expect(result.responseBody).toBeNull();
     });
   });
 });

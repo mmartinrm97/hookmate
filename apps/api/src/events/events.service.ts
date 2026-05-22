@@ -38,6 +38,28 @@ export class EventsService {
     return entity.toPrimitive();
   }
 
+  async updateStatus(
+    id: string,
+    status: HookMateEventStatus,
+    deliveredAt?: Date,
+  ): Promise<HookMateEvent> {
+    const entity = await this.repo.findOne({ where: { id } });
+
+    if (!entity) {
+      throw new NotFoundException(`Event ${id} was not found.`);
+    }
+
+    entity.status = status;
+
+    if (deliveredAt !== undefined) {
+      entity.deliveredAt = deliveredAt;
+    }
+
+    const saved = await this.repo.save(entity);
+
+    return saved.toPrimitive();
+  }
+
   async create(input: CreateEventInput): Promise<HookMateEvent> {
     const entity = this.repo.create({
       id: input.id,

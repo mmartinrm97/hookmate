@@ -26,4 +26,13 @@ export class RoutingRulesService {
 
     return entity.toPrimitive();
   }
+
+  async getByEndpointId(endpointId: string): Promise<HookMateRoutingRule[]> {
+    const entities = await this.repo.find({
+      where: { endpointId: { id: endpointId } },
+      order: { priority: 'ASC' },
+    });
+
+    return entities.map((entity) => entity.toPrimitive());
+  }
 }
