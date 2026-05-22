@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
+import { DataSource } from 'typeorm';
 import { AppModule } from './../src/app.module';
 import { configureApp } from './../src/configure-app.js';
 
@@ -83,5 +84,81 @@ describe.skipIf(!isDbAvailable)('API bootstrap (e2e)', () => {
       .expect(200);
 
     expect((resumeResponse.body as EndpointPayload).status).toBe('active');
+  });
+});
+
+describe.skipIf(!process.env.POSTGRES_HOST)('Database schema (e2e)', () => {
+  let app: NestFastifyApplication;
+  let dataSource: DataSource;
+
+  beforeEach(async () => {
+    const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+
+    app = moduleFixture.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
+    await configureApp(app);
+    await app.init();
+    await app.getHttpAdapter().getInstance().ready();
+
+    dataSource = moduleFixture.get<DataSource>(DataSource);
+  });
+
+  afterEach(async () => {
+    await dataSource.query('DELETE FROM ai_summaries');
+    await dataSource.query('DELETE FROM dlq_events');
+    await dataSource.query('DELETE FROM delivery_attempts');
+    await dataSource.query('DELETE FROM routing_rules');
+    await dataSource.query('DELETE FROM events');
+    await dataSource.query('DELETE FROM endpoints');
+  });
+
+  afterAll(async () => {
+    await app?.close();
+  });
+
+  it('verifies all tables exist via entity metadata', () => {
+    const entityNames = dataSource.entityMetadatas.map((m) => m.tableName).sort();
+    expect(entityNames).toContain('endpoints');
+    expect(entityNames).toContain('events');
+    expect(entityNames).toContain('delivery_attempts');
+    expect(entityNames).toContain('dlq_events');
+    expect(entityNames).toContain('routing_rules');
+    expect(entityNames).toContain('ai_summaries');
+  });
+
+  it('can insert and read an event with FK to endpoint', async () => {
+    const endpointRepo = dataSource.getRepository('Endpoint');
+    const endpoint = endpointRepo.create({
+      id: '01TESTENDPOINT000000001',
+      name: 'Test endpoint',
+      destinationUrl: 'https://example.com/webhook',
+    });
+    await endpointRepo.save(endpoint);
+
+    const eventRepo = dataSource.getRepository('Event');
+    const event = eventRepo.create({
+      id: '01TESTEVENT000000000001',
+      endpointId: endpoint,
+      payload: { type: 'test', data: 'hello' },
+      status: 'received',
+    });
+    await eventRepo.save(event);
+
+    const found = await eventRepo.findOne({ where: { id: event.id } });
+    expect(found).toBeDefined();
+    expect(found?.payload).toEqual({ type: 'test', data: 'hello' });
+  });
+
+  it('enforces FK constraint on events (cannot create event without endpoint)', async () => {
+    const eventRepo = dataSource.getRepository('Event');
+    const event = eventRepo.create({
+      id: '01TESTEVENT000000000002',
+      endpointId: { id: '01NONEXISTENT0000000000' } as any,
+      payload: { type: 'test' },
+      status: 'received',
+    });
+
+    await expect(eventRepo.save(event)).rejects.toThrow();
   });
 });
