@@ -14,11 +14,11 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@types/node": "^25.9.1",
+    "@types/node": "catalog:",
     "aws-cdk": "^2.1124.1",
     "aws-cdk-lib": "^2.256.1",
     "constructs": "^10.6.0",
     "ts-node": "^10.9.2",
-    "typescript": "^6.0.3"
+    "typescript": "catalog:"
   }
 }
