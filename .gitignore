@@ -72,3 +72,7 @@ desktop.ini
 .codegraph/
 opencode.jsonc
 skills-lock.json
+
+# sonarqube (local config, not for version control)
+sonarqube/
+.scannerwork

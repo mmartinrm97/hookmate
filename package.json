@@ -25,6 +25,7 @@
     "format:check": "oxfmt --check",
     "branch:check": "node scripts/validate-branch-name.mjs",
     "lint:lockfile": "node scripts/lint-pnpm-lockfile.mjs",
+    "sonar": "node scripts/sonar.mjs",
     "infra:synth": "pnpm --filter @hookmate/infrastructure synth",
     "infra:deploy": "pnpm --filter @hookmate/infrastructure deploy",
     "prepare": "husky"

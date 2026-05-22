@@ -46,12 +46,16 @@ describe('EventsService', () => {
   let mockRepo: {
     find: ReturnType<typeof vi.fn>;
     findOne: ReturnType<typeof vi.fn>;
+    create: ReturnType<typeof vi.fn>;
+    save: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(async () => {
     mockRepo = {
       find: vi.fn(),
       findOne: vi.fn(),
+      create: vi.fn(),
+      save: vi.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -119,6 +123,78 @@ describe('EventsService', () => {
       mockRepo.findOne.mockResolvedValue(null);
 
       await expect(service.getById('nonexistent-id')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('create()', () => {
+    it('persists an event with all required fields and returns a primitive', async () => {
+      const input = {
+        id: 'evt-01JHQ',
+        endpointId: 'ep-01JHQ',
+        payload: { type: 'test', data: 'hello' },
+        headers: { 'content-type': 'application/json' },
+        sourceIp: '10.0.0.1',
+        traceId: 'trace-abc',
+      };
+      const entity = createMockEntity({
+        id: input.id,
+        endpointId: { id: input.endpointId } as never,
+        payload: input.payload,
+        headers: input.headers,
+        sourceIp: input.sourceIp,
+        traceId: input.traceId,
+      });
+      mockRepo.create.mockReturnValue(entity);
+      mockRepo.save.mockResolvedValue(entity);
+
+      const result = await service.create(input);
+
+      expect(result.id).toBe('evt-01JHQ');
+      expect(result.endpointId).toBe('ep-01JHQ');
+      expect(result.payload).toEqual({ type: 'test', data: 'hello' });
+      expect(result.status).toBe('received');
+      expect(result.traceId).toBe('trace-abc');
+      expect(mockRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 'evt-01JHQ',
+          endpointId: { id: 'ep-01JHQ' },
+          payload: { type: 'test', data: 'hello' },
+          status: 'received',
+        }),
+      );
+      expect(mockRepo.save).toHaveBeenCalledWith(entity);
+    });
+
+    it('sets default status to received', async () => {
+      const input = {
+        id: 'evt-02JHQ',
+        endpointId: 'ep-02JHQ',
+        payload: { msg: 'test' },
+      };
+      const entity = createMockEntity({
+        id: input.id,
+        endpointId: { id: input.endpointId } as never,
+        payload: input.payload,
+      });
+      mockRepo.create.mockReturnValue(entity);
+      mockRepo.save.mockResolvedValue(entity);
+
+      const result = await service.create({ ...input, status: undefined });
+
+      expect(result.status).toBe('received');
+      expect(mockRepo.create).toHaveBeenCalledWith(expect.objectContaining({ status: 'received' }));
+    });
+
+    it('rejects when the database save fails', async () => {
+      const input = {
+        id: 'evt-03JHQ',
+        endpointId: 'ep-03JHQ',
+        payload: { msg: 'fail' },
+      };
+      mockRepo.create.mockReturnValue({ id: input.id } as Event);
+      mockRepo.save.mockRejectedValue(new Error('DB connection lost'));
+
+      await expect(service.create(input)).rejects.toThrow('DB connection lost');
     });
   });
 });

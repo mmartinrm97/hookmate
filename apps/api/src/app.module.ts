@@ -6,7 +6,9 @@ import { DlqEventsModule } from './dlq-events/dlq-events.module';
 import { EndpointsModule } from './endpoints/endpoints.module';
 import { EventsModule } from './events/events.module';
 import { HealthModule } from './health/health.module';
+import { IngestionModule } from './ingestion/ingestion.module';
 import { RoutingRulesModule } from './routing-rules/routing-rules.module';
+import { SqsModule } from './sqs/sqs.module';
 
 @Module({
   imports: [
@@ -18,6 +20,8 @@ import { RoutingRulesModule } from './routing-rules/routing-rules.module';
     DlqEventsModule,
     RoutingRulesModule,
     AiSummariesModule,
+    SqsModule,
+    IngestionModule,
   ],
 })
 export class AppModule {}

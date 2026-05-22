@@ -1,8 +1,19 @@
-import type { HookMateEvent } from '@hookmate/shared';
+import type { HookMateEvent, HookMateEventStatus } from '@hookmate/shared';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Event } from './entities/event.entity';
+
+export interface CreateEventInput {
+  id: string;
+  endpointId: string;
+  payload: Record<string, unknown>;
+  headers?: Record<string, string> | null;
+  sourceIp?: string | null;
+  status?: HookMateEventStatus;
+  category?: string | null;
+  traceId?: string | null;
+}
 
 @Injectable()
 export class EventsService {
@@ -25,5 +36,22 @@ export class EventsService {
     }
 
     return entity.toPrimitive();
+  }
+
+  async create(input: CreateEventInput): Promise<HookMateEvent> {
+    const entity = this.repo.create({
+      id: input.id,
+      endpointId: { id: input.endpointId } as never,
+      payload: input.payload,
+      headers: input.headers ?? null,
+      sourceIp: input.sourceIp ?? null,
+      status: input.status ?? ('received' as HookMateEventStatus),
+      category: input.category ?? null,
+      traceId: input.traceId ?? null,
+    });
+
+    const saved = await this.repo.save(entity);
+
+    return saved.toPrimitive();
   }
 }
