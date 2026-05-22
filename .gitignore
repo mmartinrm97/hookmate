@@ -1,0 +1,74 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+build/
+out/
+.next/
+cdk.out/
+
+# Test / coverage
+coverage/
+.nyc_output/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# TypeScript incremental compilation cache
+*.tsbuildinfo
+
+# AWS CDK
+cdk.out/
+cdk.context.json
+
+# Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfstate.*.backup
+.terraform.lock.hcl
+*.tfvars
+!*.tfvars.example
+terraform.tfplan
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE / editors
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Misc
+*.pid
+*.seed
+*.pid.lock
+
+
+# Agents / AI tooling (local config, not for version control)
+.agents
+.claude
+.kiro
+.cursor
+.atl
+.codegraph/
+opencode.jsonc
+skills-lock.json
