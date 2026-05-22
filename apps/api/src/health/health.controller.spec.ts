@@ -1,14 +1,28 @@
-import { ConfigService } from '@nestjs/config';
-import { describe, expect, it, beforeEach } from 'vitest';
-import { AppConfigService } from '../core/config/app-config.service.js';
-import { HealthController } from './health.controller.js';
-import { HealthService } from './health.service.js';
+import {
+  HealthCheckService,
+  MemoryHealthIndicator,
+  TypeOrmHealthIndicator,
+} from '@nestjs/terminus';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { HealthController } from './health.controller';
 
 describe('HealthController', () => {
   let controller: HealthController;
 
   beforeEach(() => {
-    controller = new HealthController(new HealthService(new AppConfigService(new ConfigService())));
+    const mockHealth = {
+      check: vi.fn().mockResolvedValue({ status: 'ok', info: {}, error: {}, details: {} }),
+    } as unknown as HealthCheckService;
+
+    const mockDb = {
+      pingCheck: vi.fn().mockResolvedValue({ database: { status: 'up' } }),
+    } as unknown as TypeOrmHealthIndicator;
+
+    const mockMemory = {
+      checkHeap: vi.fn().mockResolvedValue({ memory_heap: { status: 'up' } }),
+    } as unknown as MemoryHealthIndicator;
+
+    controller = new HealthController(mockHealth, mockDb, mockMemory);
   });
 
   it('returns the API root metadata', () => {
@@ -20,14 +34,9 @@ describe('HealthController', () => {
     });
   });
 
-  it('returns an ok health snapshot', () => {
-    const response = controller.getHealth();
+  it('delegates health check to terminus', async () => {
+    const result = await controller.getHealth();
 
-    expect(response.service).toBe('hookmate-api');
-    expect(response.status).toBe('ok');
-    expect(response.region).toBeTruthy();
-    expect(response.environment).toBeTruthy();
-    expect(response.version).toBeTruthy();
-    expect(new Date(response.timestamp).toString()).not.toBe('Invalid Date');
+    expect(result).toEqual(expect.objectContaining({ status: 'ok' }));
   });
 });

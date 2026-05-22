@@ -5,4 +5,15 @@ export type HookMateEventStatus =
   | 'failed'
   | 'dead_lettered';
 
-export type HookMateDestinationType = 'http' | 'slack' | 'discord' | 'discard';
+export interface HookMateEvent {
+  id: string;
+  endpointId: string;
+  payload: Record<string, unknown>;
+  headers: Record<string, string> | null;
+  sourceIp: string | null;
+  status: HookMateEventStatus;
+  category: string | null;
+  traceId: string | null;
+  receivedAt: string;
+  deliveredAt: string | null;
+}

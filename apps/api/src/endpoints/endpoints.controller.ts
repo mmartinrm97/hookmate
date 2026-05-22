@@ -1,8 +1,8 @@
-import { Body, Controller, Get, Inject, Param, Patch, Post } from '@nestjs/common';
 import type { HookMateEndpoint } from '@hookmate/shared';
+import { Body, Controller, Get, Inject, Param, Patch, Post } from '@nestjs/common';
 import { ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { CreateEndpointDto } from './dto/create-endpoint.dto.js';
-import { EndpointsService } from './endpoints.service.js';
+import { CreateEndpointDto } from './dto/create-endpoint.dto';
+import { EndpointsService } from './endpoints.service';
 
 @ApiTags('endpoints')
 @Controller({ path: 'endpoints', version: '1' })

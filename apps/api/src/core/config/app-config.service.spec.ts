@@ -1,13 +1,14 @@
-import { describe, expect, it, vi } from 'vitest';
 import { ConfigService } from '@nestjs/config';
-import { AppConfigService } from './app-config.service.js';
+import { describe, expect, it, vi } from 'vitest';
+import { AppConfigService } from './app-config.service';
+import type { Env } from './env.schema';
 
 describe('AppConfigService', () => {
   describe('getDatabaseConfig', () => {
-    const createMockConfigService = (overrides: Record<string, string> = {}) => {
-      const defaults: Record<string, string> = {
+    const createMockConfigService = (overrides: Record<string, unknown> = {}) => {
+      const defaults: Record<string, unknown> = {
         POSTGRES_HOST: 'localhost',
-        POSTGRES_PORT: '5432',
+        POSTGRES_PORT: 5432,
         POSTGRES_USER: 'hookmate',
         POSTGRES_PASSWORD: 'hookmate',
         POSTGRES_DB: 'hookmate',
@@ -20,7 +21,7 @@ describe('AppConfigService', () => {
           if (key in defaults) return defaults[key];
           throw new Error(`Config key "${key}" not found`);
         }),
-      } as unknown as ConfigService;
+      } as unknown as ConfigService<Env, true>;
     };
 
     it('returns TypeOrmModuleOptions with postgres driver and defaults', () => {
@@ -43,7 +44,7 @@ describe('AppConfigService', () => {
     it('reads custom host and port from environment variables', () => {
       const mockConfigService = createMockConfigService({
         POSTGRES_HOST: 'pg.example.com',
-        POSTGRES_PORT: '6543',
+        POSTGRES_PORT: 6543,
       });
       const service = new AppConfigService(mockConfigService);
       const config = service.getDatabaseConfig() as Record<string, unknown>;

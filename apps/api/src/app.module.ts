@@ -1,12 +1,23 @@
 import { Module } from '@nestjs/common';
-import { CoreModule } from './core/core.module.js';
-import { EndpointsModule } from './endpoints/endpoints.module.js';
-import { HealthController } from './health/health.controller.js';
-import { HealthService } from './health/health.service.js';
+import { AiSummariesModule } from './ai-summaries/ai-summaries.module';
+import { CoreModule } from './core/core.module';
+import { DeliveryAttemptsModule } from './delivery-attempts/delivery-attempts.module';
+import { DlqEventsModule } from './dlq-events/dlq-events.module';
+import { EndpointsModule } from './endpoints/endpoints.module';
+import { EventsModule } from './events/events.module';
+import { HealthModule } from './health/health.module';
+import { RoutingRulesModule } from './routing-rules/routing-rules.module';
 
 @Module({
-  imports: [CoreModule, EndpointsModule],
-  controllers: [HealthController],
-  providers: [HealthService],
+  imports: [
+    CoreModule,
+    HealthModule,
+    EndpointsModule,
+    EventsModule,
+    DeliveryAttemptsModule,
+    DlqEventsModule,
+    RoutingRulesModule,
+    AiSummariesModule,
+  ],
 })
 export class AppModule {}

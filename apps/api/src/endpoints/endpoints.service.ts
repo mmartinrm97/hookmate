@@ -1,13 +1,13 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import type {
   CreateHookMateEndpointInput,
   HookMateEndpoint,
   HookMateEndpointStatus,
 } from '@hookmate/shared';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { ulid } from 'ulid';
-import { Endpoint } from './entities/endpoint.entity.js';
+import { Endpoint } from './entities/endpoint.entity';
 
 const DEFAULT_MAX_RETRIES = 5;
 const DEFAULT_RETRY_BASE_DELAY_MS = 5_000;

@@ -1,17 +1,29 @@
 import { Controller, Get, Inject } from '@nestjs/common';
-import type { HookMateHealthSnapshot } from '@hookmate/shared';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { HealthService } from './health.service.js';
+import {
+  HealthCheck,
+  HealthCheckService,
+  MemoryHealthIndicator,
+  TypeOrmHealthIndicator,
+} from '@nestjs/terminus';
 
 @ApiTags('health')
 @Controller({ version: '1' })
 export class HealthController {
-  constructor(@Inject(HealthService) private readonly healthService: HealthService) {}
+  constructor(
+    @Inject(HealthCheckService) private readonly health: HealthCheckService,
+    @Inject(TypeOrmHealthIndicator) private readonly db: TypeOrmHealthIndicator,
+    @Inject(MemoryHealthIndicator) private readonly memory: MemoryHealthIndicator,
+  ) {}
 
   @ApiOperation({ summary: 'Read API health status' })
   @Get('health')
-  getHealth(): HookMateHealthSnapshot & { status: 'ok' } {
-    return this.healthService.getSnapshot();
+  @HealthCheck()
+  getHealth() {
+    return this.health.check([
+      () => this.db.pingCheck('database'),
+      () => this.memory.checkHeap('memory_heap', 300 * 1024 * 1024),
+    ]);
   }
 
   @ApiOperation({ summary: 'Read API entrypoint metadata' })
