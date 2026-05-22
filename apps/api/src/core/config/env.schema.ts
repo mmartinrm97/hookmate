@@ -25,6 +25,7 @@ export const envSchema = z.object({
   // SQS
   SQS_INGESTION_QUEUE_URL: z.string().url().optional(),
   SQS_DLQ_URL: z.string().url().optional(),
+  SQS_POLL_INTERVAL_MS: z.coerce.number().int().min(100).default(1000),
 
   // SNS
   SNS_ALARM_TOPIC_ARN: z.string().optional(),
