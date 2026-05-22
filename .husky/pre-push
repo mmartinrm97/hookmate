@@ -1,1 +1,3 @@
 pnpm branch:check
+pnpm typecheck
+pnpm test:unit

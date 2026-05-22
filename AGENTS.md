@@ -194,7 +194,7 @@ Examples:
 | IDs              | ULID (`ulid` package)                                 |
 | Testing          | Vitest 2 (unit + integration), Supertest (e2e)        |
 | Linter/formatter | oxlint + oxlint-tsgolint (type-aware) + oxfmt         |
-| TypeScript       | 5.7, `module: NodeNext`, `moduleResolution: NodeNext` |
+| TypeScript       | 6.0, `module: NodeNext`, `moduleResolution: NodeNext` |
 
 ### `apps/dashboard` — React Dashboard
 
