@@ -1,8 +1,8 @@
+import helmet from '@fastify/helmet';
 import { ValidationPipe, VersioningType, type INestApplication } from '@nestjs/common';
 import type { NestFastifyApplication } from '@nestjs/platform-fastify';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import helmet from '@fastify/helmet';
-import { AppConfigService } from './core/config/app-config.service.js';
+import { AppConfigService } from './core/config/app-config.service';
 
 export async function configureApp(app: INestApplication): Promise<void> {
   const appConfigService = app.get(AppConfigService);
