@@ -4,12 +4,8 @@
   "categories": {
     "correctness": "off"
   },
-  "options": {
-    "typeAware": true
-  },
   "env": {
     "builtin": true,
-    "jest": true,
     "node": true
   },
   "ignorePatterns": ["**/dist/**", "**/node_modules/**"],
