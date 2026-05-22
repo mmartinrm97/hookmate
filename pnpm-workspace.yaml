@@ -1,0 +1,42 @@
+packages:
+  - 'apps/*'
+  - 'packages/*'
+  - 'infrastructure'
+
+# SECURITY: block packages newer than 3 days (4320 minutes).
+# Prevents installing packages during the typosquatting/compromise discovery window.
+# For urgent security patches, run `pnpm audit --fix` or add to minimumReleaseAgeExclude.
+minimumReleaseAge: 4320
+
+# Allow instant upgrades for packages that release frequently and are low-risk.
+minimumReleaseAgeExclude:
+  - typescript
+  - '@types/node'
+  - esbuild@0.24.3
+  - vite@6.4.2
+  - uuid@11.1.1
+
+# SECURITY: reject a version whose publish-time trust signals regressed (pnpm 10.21+).
+# Aborts install if a new version has weaker provenance/signature evidence than prior versions.
+# This is an early-warning signal for account compromises and supply chain attacks.
+trustPolicy: no-downgrade
+
+# Exempt packages published more than 30 days ago from trust downgrade checks (pnpm 10.27+).
+# Useful for older packages that pre-date npm provenance attestation support.
+trustPolicyIgnoreAfter: 43200
+
+# SECURITY: block transitive dependencies from using git URLs or raw tarballs (pnpm 10.26+).
+# Only direct dependencies declared in package.json may use exotic sources.
+# Prevents transitive deps from bypassing registry security scanning.
+blockExoticSubdeps: true
+
+# SECURITY: fail the install if a dependency runs a build script not in allowBuilds.
+# Turns silent warnings into CI-blocking failures (pnpm 10.3+).
+strictDepBuilds: true
+
+# Explicit allow-list for lifecycle scripts (pnpm 10.26+ preferred syntax).
+# onlyBuiltDependencies / ignoredBuiltDependencies are deprecated — use allowBuilds.
+allowBuilds:
+  '@nestjs/core': true
+  esbuild: true
+  msgpackr-extract: true

@@ -1,0 +1,35 @@
+{
+  "name": "hookmate",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --filter @hookmate/api dev",
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "test:unit": "pnpm -r test:unit",
+    "test:integration": "pnpm -r test:integration",
+    "lint": "pnpm -r lint",
+    "format": "oxfmt",
+    "format:check": "oxfmt --check",
+    "lint:lockfile": "lockfile-lint --path pnpm-lock.yaml --type pnpm --allowed-hosts npm --validate-https",
+    "infra:synth": "pnpm --filter @hookmate/infrastructure synth",
+    "infra:deploy": "pnpm --filter @hookmate/infrastructure deploy",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^21.0.1",
+    "@commitlint/config-conventional": "^21.0.1",
+    "@commitlint/types": "^21.0.1",
+    "husky": "^9.0.0",
+    "lint-staged": "^15.0.0",
+    "lockfile-lint": "^4.14.0",
+    "oxfmt": "^0.50.0",
+    "oxlint": "^1.65.0",
+    "typescript": "^5.4.0"
+  },
+  "lint-staged": {
+    "**/*.{ts,tsx}": [
+      "oxlint --fix",
+      "oxfmt"
+    ]
+  }
+}
