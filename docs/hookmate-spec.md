@@ -1134,61 +1134,61 @@ Each criterion is independently verifiable. The audit will check these explicitl
 
 ### Repository setup
 
-- [ ] Monorepo with workspaces: `apps/api`, `apps/dashboard`, `infrastructure`, `terraform`, `packages/shared`
-- [ ] Root `package.json` with workspace scripts: `dev`, `test`, `lint`, `build`
-- [ ] ESLint + Prettier configured (shared config in `packages/shared`)
-- [ ] Husky pre-commit hook: lint + unit tests on staged files
-- [ ] `.env.example` with all required variables documented
-- [ ] `docker-compose.yml` for local development: PostgreSQL, Redis, Floci (AWS emulator)
+- [x] Monorepo with workspaces: `apps/api`, `apps/dashboard`, `infrastructure`, `terraform`, `packages/shared`
+- [x] Root `package.json` with workspace scripts: `dev`, `test`, `lint`, `build`
+- [x] ESLint + Prettier configured (shared config in `packages/shared`) — oxlint + oxfmt
+- [x] Husky pre-commit hook: lint + unit tests on staged files
+- [x] `.env.example` with all required variables documented
+- [x] `docker-compose.yml` for local development: PostgreSQL, Redis, Floci (AWS emulator)
 
 ### Phase A: Database + core models
 
-- [ ] PostgreSQL schema migrations with a tool (Prisma or TypeORM migrations — not raw SQL files)
-- [ ] `endpoints` table with all columns
-- [ ] `events` table with all columns and indexes
-- [ ] `delivery_attempts` table
-- [ ] `dlq_events` table
-- [ ] `routing_rules` table
-- [ ] `ai_summaries` table
+- [x] PostgreSQL schema migrations with a tool (Prisma or TypeORM migrations — not raw SQL files)
+- [x] `endpoints` table with all columns
+- [x] `events` table with all columns and indexes
+- [x] `delivery_attempts` table
+- [x] `dlq_events` table
+- [x] `routing_rules` table
+- [x] `ai_summaries` table
 - [ ] Seed script: creates 1 test endpoint + 20 test events in various statuses
 
 ### Phase B: Ingestion Lambda
 
-- [ ] HTTP handler: validate `endpointId`, parse body, read headers
-- [ ] HMAC verification function with `timingSafeEqual`
-- [ ] DB write: insert into `events` with status `received`
-- [ ] SQS publish: structured `IngestionMessage` payload
-- [ ] Return 202 with `event_id` and `trace_id`
+- [x] HTTP handler: validate `endpointId`, parse body, read headers
+- [x] HMAC verification function with `timingSafeEqual`
+- [x] DB write: insert into `events` with status `received`
+- [x] SQS publish: structured `IngestionMessage` payload
+- [x] Return 202 with `event_id` and `trace_id`
 - [ ] OpenTelemetry: `hookmate.event.ingest` span with required attributes
-- [ ] Unit tests: valid event, invalid endpoint, bad HMAC, DB failure
+- [x] Unit tests: valid event, invalid endpoint, bad HMAC, DB failure
 - [ ] Integration test: full roundtrip with Floci (SQS + Lambda + Secrets Manager all emulated at localhost:4566)
 
 ### Phase C: Processor Lambda + BullMQ
 
-- [ ] SQS event source mapping consuming from ingestion queue
-- [ ] Routing rule evaluator: header match, json_path match, source_ip match
-- [ ] HTTP delivery with `axios` or `undici` (timeout: 10s)
-- [ ] Delivery attempt recording in `delivery_attempts`
-- [ ] BullMQ retry scheduling with exponential backoff
-- [ ] DLQ promotion after max retries
+- [x] SQS event source mapping consuming from ingestion queue — SqsConsumerService (dev polling)
+- [x] Routing rule evaluator: header match, json_path match, source_ip match
+- [x] HTTP delivery with `axios` or `undici` (timeout: 10s)
+- [x] Delivery attempt recording in `delivery_attempts`
+- [x] BullMQ retry scheduling with exponential backoff
+- [x] DLQ promotion after max retries
 - [ ] OpenTelemetry: `hookmate.event.process`, `hookmate.delivery.attempt` spans
-- [ ] Unit tests: routing rule logic, backoff calculation, DLQ promotion
+- [x] Unit tests: routing rule logic, backoff calculation, DLQ promotion
 - [ ] Integration test: full flow with a test HTTP server (failing + succeeding)
 
 ### Phase D: DLQ Lambda
 
-- [ ] Triggered by SQS DLQ queue
-- [ ] Write `dlq_events` row with full context snapshot
+- [x] Triggered by SQS DLQ queue — DlqPromoterService (in-process)
+- [x] Write `dlq_events` row with full context snapshot
 - [ ] Check depth against endpoint threshold
 - [ ] Publish SNS notification if threshold exceeded
 - [ ] Unit tests: threshold logic, SNS publish
 
 ### Phase E: NestJS management API
 
-- [ ] Endpoints CRUD (`/api/endpoints`)
-- [ ] Events list + detail + attempts (`/api/events`)
+- [x] Endpoints CRUD (`/api/endpoints`)
+- [ ] Events list + detail + attempts (`/api/events`) — partially implemented (list, getById)
 - [ ] DLQ endpoints: list, retry, retry-all, purge (`/api/dlq`)
-- [ ] Routing rules CRUD (`/api/endpoints/{id}/rules`)
+- [ ] Routing rules CRUD (`/api/endpoints/{id}/rules`) — partially implemented (list, getById, getByEndpointId)
 - [ ] AI summaries: list + on-demand generate (`/api/endpoints/{id}/summaries`)
 - [ ] Metrics endpoint (`/api/metrics`)
 - [ ] API key middleware
