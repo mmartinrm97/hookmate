@@ -18,9 +18,7 @@ import { SqsConsumerService } from './sqs-consumer.service';
     BullModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
-        redis: {
-          url: configService.get<string>('REDIS_URL') ?? 'redis://localhost:6379',
-        },
+        redis: configService.get<string>('REDIS_URL') ?? 'redis://localhost:6379',
       }),
       inject: [ConfigService],
     }),
