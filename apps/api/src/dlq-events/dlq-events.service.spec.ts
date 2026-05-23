@@ -48,12 +48,16 @@ describe('DlqEventsService', () => {
   let mockRepo: {
     find: ReturnType<typeof vi.fn>;
     findOne: ReturnType<typeof vi.fn>;
+    create: ReturnType<typeof vi.fn>;
+    save: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(async () => {
     mockRepo = {
       find: vi.fn(),
       findOne: vi.fn(),
+      create: vi.fn(),
+      save: vi.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -120,6 +124,57 @@ describe('DlqEventsService', () => {
       mockRepo.findOne.mockResolvedValue(null);
 
       await expect(service.getById('nonexistent-dlq-id')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('create()', () => {
+    it('records a DLQ event with full context snapshot', async () => {
+      const input = {
+        eventId: 'evt-failed-01',
+        endpointId: 'ep-01JHQ',
+        failureReason: 'Max retries exceeded after 5 attempts',
+        attemptsJson: [
+          { attempt: 1, status: 502 },
+          { attempt: 2, status: 503 },
+          { attempt: 3, status: 504 },
+        ],
+        endpointSnapshot: {
+          name: 'test-endpoint',
+          destinationUrl: 'https://example.com/hook',
+          retryBaseDelayMs: 5000,
+          maxRetries: 5,
+        },
+      };
+      const entity = createMockEntity({
+        id: 'dlq-created-01',
+        eventId: { id: input.eventId } as never,
+        endpointId: { id: input.endpointId } as never,
+        failureReason: input.failureReason,
+        attemptsJson: input.attemptsJson,
+        endpointSnapshot: input.endpointSnapshot,
+      });
+      mockRepo.create.mockReturnValue(entity);
+      mockRepo.save.mockResolvedValue(entity);
+
+      const result = await service.create(input);
+
+      expect(result.id).toBe('dlq-created-01');
+      expect(result.eventId).toBe('evt-failed-01');
+      expect(result.endpointId).toBe('ep-01JHQ');
+      expect(result.failureReason).toBe('Max retries exceeded after 5 attempts');
+      expect(result.attemptsJson).toHaveLength(3);
+      expect(result.endpointSnapshot).toMatchObject({
+        name: 'test-endpoint',
+        destinationUrl: 'https://example.com/hook',
+      });
+      expect(mockRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          eventId: { id: 'evt-failed-01' },
+          endpointId: { id: 'ep-01JHQ' },
+          failureReason: 'Max retries exceeded after 5 attempts',
+        }),
+      );
+      expect(mockRepo.save).toHaveBeenCalledWith(entity);
     });
   });
 });

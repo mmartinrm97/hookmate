@@ -119,4 +119,33 @@ describe('RoutingRulesService', () => {
       await expect(service.getById(999)).rejects.toThrow(NotFoundException);
     });
   });
+
+  describe('getByEndpointId()', () => {
+    it('returns routing rules for an endpoint ordered by priority ASC', async () => {
+      const endpointId = 'ep-01JHQ';
+      const rule1 = createMockEntity({ id: 1, priority: 10 });
+      const rule2 = createMockEntity({ id: 2, priority: 20 });
+      const rule3 = createMockEntity({ id: 3, priority: 30 });
+      mockRepo.find.mockResolvedValue([rule1, rule2, rule3]);
+
+      const result = await service.getByEndpointId(endpointId);
+
+      expect(result).toHaveLength(3);
+      expect(result[0]?.id).toBe(1);
+      expect(result[1]?.id).toBe(2);
+      expect(result[2]?.id).toBe(3);
+      expect(mockRepo.find).toHaveBeenCalledWith({
+        where: { endpointId: { id: endpointId } },
+        order: { priority: 'ASC' },
+      });
+    });
+
+    it('returns empty array when endpoint has no routing rules', async () => {
+      mockRepo.find.mockResolvedValue([]);
+
+      const result = await service.getByEndpointId('ep-no-rules');
+
+      expect(result).toEqual([]);
+    });
+  });
 });
