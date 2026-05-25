@@ -1185,15 +1185,15 @@ Each criterion is independently verifiable. The audit will check these explicitl
 
 ### Phase E: NestJS management API
 
-- [x] Endpoints CRUD (`/api/endpoints`)
-- [ ] Events list + detail + attempts (`/api/events`) — partially implemented (list, getById)
-- [ ] DLQ endpoints: list, retry, retry-all, purge (`/api/dlq`)
-- [ ] Routing rules CRUD (`/api/endpoints/{id}/rules`) — partially implemented (list, getById, getByEndpointId)
-- [ ] AI summaries: list + on-demand generate (`/api/endpoints/{id}/summaries`)
-- [ ] Metrics endpoint (`/api/metrics`)
-- [ ] API key middleware
-- [ ] Swagger/OpenAPI docs (NestJS `@nestjs/swagger`)
-- [ ] Integration tests: each endpoint group
+- [x] Endpoints CRUD (`/api/endpoints`) — create, list, getById, update (PATCH), soft-delete (DELETE), pause, resume
+- [x] Events list + detail + attempts (`/api/events`) — filtered list with pagination, detail, attempts
+- [x] DLQ endpoints: list, retry, retry-all, purge (`/api/dlq`)
+- [x] Routing rules CRUD (`/api/endpoints/{id}/rules`)
+- [x] AI summaries: list + on-demand generate (`/api/endpoints/{id}/summaries`)
+- [x] Metrics endpoint (`/api/metrics`) — system-wide + per-endpoint with latency percentiles
+- [x] API key middleware — global `ApiKeyGuard` with `@Public()` opt-out
+- [x] Swagger/OpenAPI docs (NestJS `@nestjs/swagger`)
+- [x] Integration tests: full lifecycle, auth guard, DLQ introspection
 
 ### Phase F: AI Background Lambda
 

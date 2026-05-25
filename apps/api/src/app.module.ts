@@ -8,24 +8,26 @@ import { EndpointsModule } from './endpoints/endpoints.module';
 import { EventsModule } from './events/events.module';
 import { HealthModule } from './health/health.module';
 import { IngestionModule } from './ingestion/ingestion.module';
+import { MetricsModule } from './metrics/metrics.module';
 import { ProcessorModule } from './processor/processor.module';
 import { RoutingRulesModule } from './routing-rules/routing-rules.module';
 import { SqsModule } from './sqs/sqs.module';
 
 @Module({
   imports: [
+    AiSummariesModule,
     AuthModule,
     CoreModule,
-    HealthModule,
-    EndpointsModule,
-    EventsModule,
     DeliveryAttemptsModule,
     DlqEventsModule,
-    RoutingRulesModule,
-    AiSummariesModule,
-    SqsModule,
+    EndpointsModule,
+    EventsModule,
+    HealthModule,
     IngestionModule,
+    MetricsModule,
     ProcessorModule,
+    RoutingRulesModule,
+    SqsModule,
   ],
 })
 export class AppModule {}

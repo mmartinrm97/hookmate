@@ -89,6 +89,25 @@ describe('EndpointsService', () => {
       expect(result[0]?.id).toBe('entity-1');
       expect(result[1]?.id).toBe('entity-2');
     });
+
+    it('excludes soft-deleted endpoints from the list', async () => {
+      const active = createMockEntity({
+        id: 'entity-1',
+        name: 'Active',
+        status: 'active' as const,
+      });
+      const deleted = createMockEntity({
+        id: 'entity-2',
+        name: 'Deleted',
+        status: 'deleted' as const,
+      });
+      mockRepo.find.mockResolvedValue([active, deleted]);
+
+      const result = await service.list();
+
+      expect(result).toHaveLength(1);
+      expect(result[0]?.id).toBe('entity-1');
+    });
   });
 
   describe('getById()', () => {

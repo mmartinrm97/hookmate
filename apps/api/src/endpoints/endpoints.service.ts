@@ -24,7 +24,9 @@ export class EndpointsService {
   async list(): Promise<HookMateEndpoint[]> {
     const entities = await this.repo.find({ order: { createdAt: 'DESC' } });
 
-    return entities.map((entity) => entity.toPrimitive());
+    return entities
+      .filter((entity) => entity.status !== 'deleted')
+      .map((entity) => entity.toPrimitive());
   }
 
   async getById(id: string): Promise<HookMateEndpoint> {
