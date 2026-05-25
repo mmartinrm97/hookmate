@@ -196,4 +196,44 @@ describe('DeliveryAttemptsService', () => {
       expect(result.responseBody).toBeNull();
     });
   });
+
+  describe('getByEventId()', () => {
+    it('returns delivery attempts for a given event ordered by attemptNumber ASC', async () => {
+      const attempt1 = createMockEntity({ id: 1, attemptNumber: 1 });
+      const attempt2 = createMockEntity({ id: 2, attemptNumber: 2 });
+      mockRepo.find.mockResolvedValue([attempt1, attempt2]);
+
+      const result = await service.getByEventId('evt-01JHQ');
+
+      expect(result).toHaveLength(2);
+      expect(result[0]?.attemptNumber).toBe(1);
+      expect(result[1]?.attemptNumber).toBe(2);
+      expect(mockRepo.find).toHaveBeenCalledWith({
+        where: { eventId: { id: 'evt-01JHQ' } as never },
+        order: { attemptNumber: 'ASC' },
+      });
+    });
+
+    it('returns empty array when event has no delivery attempts', async () => {
+      mockRepo.find.mockResolvedValue([]);
+
+      const result = await service.getByEventId('evt-no-attempts');
+
+      expect(result).toEqual([]);
+    });
+
+    it('maps entities to primitives', async () => {
+      const attempt = createMockEntity({ id: 42, httpStatus: 200, status: 'success' as const });
+      mockRepo.find.mockResolvedValue([attempt]);
+
+      const result = await service.getByEventId('evt-01JHQ');
+
+      expect(result[0]).toMatchObject({
+        id: 42,
+        httpStatus: 200,
+        status: 'success',
+      });
+      expect(typeof result[0]?.attemptedAt).toBe('string');
+    });
+  });
 });

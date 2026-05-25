@@ -49,15 +49,27 @@ describe('EventsService', () => {
     create: ReturnType<typeof vi.fn>;
     save: ReturnType<typeof vi.fn>;
     update: ReturnType<typeof vi.fn>;
+    createQueryBuilder: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(async () => {
+    const mockQueryBuilder = {
+      select: vi.fn().mockReturnThis(),
+      where: vi.fn().mockReturnThis(),
+      andWhere: vi.fn().mockReturnThis(),
+      skip: vi.fn().mockReturnThis(),
+      take: vi.fn().mockReturnThis(),
+      orderBy: vi.fn().mockReturnThis(),
+      getManyAndCount: vi.fn(),
+    };
+
     mockRepo = {
       find: vi.fn(),
       findOne: vi.fn(),
       create: vi.fn(),
       save: vi.fn(),
       update: vi.fn(),
+      createQueryBuilder: vi.fn().mockReturnValue(mockQueryBuilder),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -259,6 +271,129 @@ describe('EventsService', () => {
       await expect(service.updateStatus('nonexistent', 'delivered')).rejects.toThrow(
         NotFoundException,
       );
+    });
+  });
+
+  describe('listFiltered()', () => {
+    it('returns all events with pagination when no filters provided', async () => {
+      const entity1 = createMockEntity({ id: 'event-1' });
+      const entity2 = createMockEntity({ id: 'event-2' });
+      const qb = mockRepo.createQueryBuilder();
+      qb.getManyAndCount.mockResolvedValue([[entity1, entity2], 2]);
+
+      const result = await service.listFiltered({});
+
+      expect(result.items).toHaveLength(2);
+      expect(result.total).toBe(2);
+      expect(result.page).toBe(1);
+      expect(result.limit).toBe(50);
+      expect(mockRepo.createQueryBuilder).toHaveBeenCalledWith('event');
+    });
+
+    it('filters by endpointId when provided', async () => {
+      const qb = mockRepo.createQueryBuilder();
+      qb.getManyAndCount.mockResolvedValue([[], 0]);
+
+      await service.listFiltered({ endpointId: 'ep-01JHQ' });
+
+      expect(qb.andWhere).toHaveBeenCalledWith('event.endpointId = :endpointId', {
+        endpointId: 'ep-01JHQ',
+      });
+    });
+
+    it('filters by status when provided', async () => {
+      const qb = mockRepo.createQueryBuilder();
+      qb.getManyAndCount.mockResolvedValue([[], 0]);
+
+      await service.listFiltered({ status: 'delivered' });
+
+      expect(qb.andWhere).toHaveBeenCalledWith('event.status = :status', {
+        status: 'delivered',
+      });
+    });
+
+    it('filters by category when provided', async () => {
+      const qb = mockRepo.createQueryBuilder();
+      qb.getManyAndCount.mockResolvedValue([[], 0]);
+
+      await service.listFiltered({ category: 'billing' });
+
+      expect(qb.andWhere).toHaveBeenCalledWith('event.category = :category', {
+        category: 'billing',
+      });
+    });
+
+    it('filters by date range when from/to provided', async () => {
+      const qb = mockRepo.createQueryBuilder();
+      qb.getManyAndCount.mockResolvedValue([[], 0]);
+
+      await service.listFiltered({
+        from: '2026-01-01T00:00:00.000Z',
+        to: '2026-01-15T23:59:59.000Z',
+      });
+
+      expect(qb.andWhere).toHaveBeenCalledWith('event.receivedAt BETWEEN :from AND :to', {
+        from: '2026-01-01T00:00:00.000Z',
+        to: '2026-01-15T23:59:59.000Z',
+      });
+    });
+
+    it('applies pagination with custom page and limit', async () => {
+      const qb = mockRepo.createQueryBuilder();
+      qb.getManyAndCount.mockResolvedValue([[], 0]);
+
+      await service.listFiltered({ page: 3, limit: 20 });
+
+      expect(qb.skip).toHaveBeenCalledWith(40); // (3-1) * 20
+      expect(qb.take).toHaveBeenCalledWith(20);
+    });
+
+    it('orders by receivedAt DESC', async () => {
+      const qb = mockRepo.createQueryBuilder();
+      qb.getManyAndCount.mockResolvedValue([[], 0]);
+
+      await service.listFiltered({});
+
+      expect(qb.orderBy).toHaveBeenCalledWith('event.receivedAt', 'DESC');
+    });
+
+    it('returns mapped primitive items', async () => {
+      const entity = createMockEntity({
+        id: 'evt-mapped',
+        status: 'delivered' as const,
+      });
+      const qb = mockRepo.createQueryBuilder();
+      qb.getManyAndCount.mockResolvedValue([[entity], 1]);
+
+      const result = await service.listFiltered({});
+
+      expect(result.items[0]).toMatchObject({
+        id: 'evt-mapped',
+        status: 'delivered',
+      });
+      expect(typeof result.items[0]?.receivedAt).toBe('string');
+    });
+
+    it('applies status filter alongside endpointId filter', async () => {
+      const qb = mockRepo.createQueryBuilder();
+      qb.getManyAndCount.mockResolvedValue([[], 0]);
+
+      await service.listFiltered({
+        endpointId: 'ep-01JHQ',
+        status: 'failed',
+      });
+
+      // Should have been called with endpointId and status
+      const andWhereCalls = qb.andWhere.mock.calls;
+      const endpointCall = andWhereCalls.find(
+        (c: unknown[]) => (c as string[])[0] === 'event.endpointId = :endpointId',
+      );
+      const statusCall = andWhereCalls.find(
+        (c: unknown[]) => (c as string[])[0] === 'event.status = :status',
+      );
+
+      expect(endpointCall).toBeDefined();
+      expect(statusCall).toBeDefined();
     });
   });
 });

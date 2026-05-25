@@ -1,4 +1,4 @@
-import type { HookMateEvent, HookMateEventStatus } from '@hookmate/shared';
+import type { HookMateEvent, HookMateEventStatus, PaginatedResponse } from '@hookmate/shared';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -15,6 +15,16 @@ export interface CreateEventInput {
   traceId?: string | null;
 }
 
+export interface ListEventsFilters {
+  endpointId?: string;
+  status?: string;
+  category?: string;
+  from?: string;
+  to?: string;
+  page?: number;
+  limit?: number;
+}
+
 @Injectable()
 export class EventsService {
   constructor(
@@ -26,6 +36,44 @@ export class EventsService {
     const entities = await this.repo.find({ order: { receivedAt: 'DESC' } });
 
     return entities.map((entity) => entity.toPrimitive());
+  }
+
+  async listFiltered(filters: ListEventsFilters): Promise<PaginatedResponse<HookMateEvent>> {
+    const page = filters.page ?? 1;
+    const limit = filters.limit ?? 50;
+    const qb = this.repo.createQueryBuilder('event');
+
+    if (filters.endpointId) {
+      qb.andWhere('event.endpointId = :endpointId', { endpointId: filters.endpointId });
+    }
+
+    if (filters.status) {
+      qb.andWhere('event.status = :status', { status: filters.status });
+    }
+
+    if (filters.category) {
+      qb.andWhere('event.category = :category', { category: filters.category });
+    }
+
+    if (filters.from && filters.to) {
+      qb.andWhere('event.receivedAt BETWEEN :from AND :to', {
+        from: filters.from,
+        to: filters.to,
+      });
+    }
+
+    qb.orderBy('event.receivedAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit);
+
+    const [entities, total] = await qb.getManyAndCount();
+
+    return {
+      items: entities.map((entity) => entity.toPrimitive()),
+      total,
+      page,
+      limit,
+    };
   }
 
   async getById(id: string): Promise<HookMateEvent> {
