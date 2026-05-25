@@ -38,6 +38,9 @@ jobs:
       - name: Lockfile lint
         run: pnpm lint:lockfile
 
+      - name: Build shared types
+        run: pnpm --filter @hookmate/shared build
+
       - name: Typecheck
         run: pnpm typecheck
 
