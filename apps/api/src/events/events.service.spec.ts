@@ -2,7 +2,7 @@ import type { HookMateEvent } from '@hookmate/shared';
 import { NotFoundException } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { Event } from './entities/event.entity';
 import { EventsService } from './events.service';
 
@@ -49,7 +49,7 @@ describe('EventsService', () => {
     create: ReturnType<typeof vi.fn>;
     save: ReturnType<typeof vi.fn>;
     update: ReturnType<typeof vi.fn>;
-    createQueryBuilder: ReturnType<typeof vi.fn>;
+    createQueryBuilder: Mock;
   };
 
   beforeEach(async () => {

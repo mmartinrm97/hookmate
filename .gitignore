@@ -76,3 +76,6 @@ skills-lock.json
 # sonarqube (local config, not for version control)
 sonarqube/
 .scannerwork
+
+# Learning docs (didactic, not part of the product)
+learning/

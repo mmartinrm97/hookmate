@@ -34,7 +34,7 @@ describe('CreateRuleDto', () => {
   it('rejects invalid matchType', async () => {
     const dto = new CreateRuleDto();
     dto.priority = 10;
-    (dto as Record<string, unknown>).matchType = 'invalid';
+    (dto as unknown as Record<string, unknown>).matchType = 'invalid';
 
     const errors = await validate(dto);
 
@@ -46,7 +46,7 @@ describe('CreateRuleDto', () => {
     const dto = new CreateRuleDto();
     dto.priority = 10;
     dto.matchType = 'header';
-    (dto as Record<string, unknown>).destinationType = 'invalid';
+    (dto as unknown as Record<string, unknown>).destinationType = 'invalid';
 
     const errors = await validate(dto);
 
