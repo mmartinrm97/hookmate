@@ -269,7 +269,7 @@ describe('index.ts barrel exports', () => {
   });
 
   it('re-exports UpdateHookMateEndpointInput', async () => {
-    const mod = await import('./endpoint.types.js');
+    const mod = (await import('./endpoint.types.js')) as Record<string, unknown>;
     expect(mod.UpdateHookMateEndpointInput).toBeUndefined(); // type-only, no runtime value
     expect(mod).toBeDefined();
   });

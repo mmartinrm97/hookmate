@@ -11,6 +11,15 @@ export interface CreateHookMateRoutingRuleInput {
   destinationUrl?: string | null;
 }
 
+export interface UpdateHookMateRoutingRuleInput {
+  priority?: number;
+  matchType?: HookMateMatchType;
+  matchKey?: string | null;
+  matchValue?: string | null;
+  destinationType?: HookMateDestinationType | null;
+  destinationUrl?: string | null;
+}
+
 export interface HookMateRoutingRule {
   id: number;
   endpointId: string;
