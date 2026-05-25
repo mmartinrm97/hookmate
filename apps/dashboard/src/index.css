@@ -1,163 +1,160 @@
-:root {
-  color: #e7ecf3;
-  background:
-    radial-gradient(circle at top, rgba(67, 97, 238, 0.28), transparent 32%),
-    linear-gradient(180deg, #0a1020 0%, #111827 42%, #0b1120 100%);
-  font-family: Inter, 'Segoe UI', sans-serif;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+@import "tailwindcss";
+
+/* ─── shadcn/ui design tokens ─────────────────────────────────── */
+@theme {
+  /* Base colors */
+  --background: hsl(0 0% 100%);
+  --foreground: hsl(222.2 84% 4.9%);
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(222.2 84% 4.9%);
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(222.2 84% 4.9%);
+  --primary: hsl(221.2 83.2% 53.3%);
+  --primary-foreground: hsl(210 40% 98%);
+  --secondary: hsl(210 40% 96.1%);
+  --secondary-foreground: hsl(222.2 47.4% 11.2%);
+  --muted: hsl(210 40% 96.1%);
+  --muted-foreground: hsl(215.4 16.3% 46.9%);
+  --accent: hsl(210 40% 96.1%);
+  --accent-foreground: hsl(222.2 47.4% 11.2%);
+  --destructive: hsl(0 84.2% 60.2%);
+  --destructive-foreground: hsl(210 40% 98%);
+  --border: hsl(214.3 31.8% 91.4%);
+  --input: hsl(214.3 31.8% 91.4%);
+  --ring: hsl(221.2 83.2% 53.3%);
+  --sidebar: hsl(0 0% 100%);
+  --sidebar-foreground: hsl(222.2 84% 4.9%);
+  --radius: 0.5rem;
 }
 
-* {
+/* Dark mode */
+@variant dark (&:where(.dark, .dark *));
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+/* Dark mode overrides */
+.dark {
+  --background: hsl(222.2 84% 4.9%);
+  --foreground: hsl(210 40% 98%);
+  --card: hsl(222.2 84% 4.9%);
+  --card-foreground: hsl(210 40% 98%);
+  --popover: hsl(222.2 84% 4.9%);
+  --popover-foreground: hsl(210 40% 98%);
+  --primary: hsl(217.2 91.2% 59.8%);
+  --primary-foreground: hsl(222.2 47.4% 11.2%);
+  --secondary: hsl(217.2 32.6% 17.5%);
+  --secondary-foreground: hsl(210 40% 98%);
+  --muted: hsl(217.2 32.6% 17.5%);
+  --muted-foreground: hsl(215 20.2% 65.1%);
+  --accent: hsl(217.2 32.6% 17.5%);
+  --accent-foreground: hsl(210 40% 98%);
+  --destructive: hsl(0 62.8% 30.6%);
+  --destructive-foreground: hsl(210 40% 98%);
+  --border: hsl(217.2 32.6% 17.5%);
+  --input: hsl(217.2 32.6% 17.5%);
+  --ring: hsl(224.3 76.3% 48%);
+  --sidebar: hsl(222.2 84% 4.9%);
+  --sidebar-foreground: hsl(210 40% 98%);
+}
+
+/* ─── Base styles ──────────────────────────────────────────────── */
+@layer base {
+  *, *::before, *::after {
+    border-color: var(--border);
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  #root {
+    min-height: 100vh;
+  }
+}
+
+/* ─── Tailwind's preflight resets ──────────────────────────────── */
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
 body {
   margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
+  line-height: inherit;
 }
 
-button,
-input,
-textarea,
-select {
-  font: inherit;
+/* ─── Animations ──────────────────────────────────────────────── */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-code {
-  font-family: 'Cascadia Code', Consolas, monospace;
-  font-size: 0.95em;
-  padding: 0.1rem 0.35rem;
-  border-radius: 0.4rem;
-  background: rgba(148, 163, 184, 0.16);
+@keyframes zoom-in-95 {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
 }
 
-#root {
-  min-height: 100vh;
+@keyframes slide-in-from-left {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
 }
 
-.app-shell {
-  width: min(1120px, calc(100% - 32px));
-  margin: 0 auto;
-  padding: 56px 0 72px;
+@keyframes slide-in-from-right {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
 }
 
-.hero-panel,
-.track-card,
-.blueprint-card {
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  background: rgba(15, 23, 42, 0.75);
-  backdrop-filter: blur(12px);
-  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.35);
+@utility animate-in {
+  animation-duration: 0.15s;
+  animation-timing-function: ease-out;
+  animation-fill-mode: forwards;
 }
 
-.hero-panel {
-  padding: 32px;
-  border-radius: 28px;
+@utility fade-in {
+  animation-name: fade-in;
 }
 
-.eyebrow,
-.track-status,
-.card-label {
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  font-size: 0.74rem;
-  color: #7dd3fc;
+@utility zoom-in-95 {
+  animation-name: zoom-in-95;
 }
 
-h1,
-h2,
-p,
-ul {
-  margin: 0;
+@utility slide-in-from-left {
+  animation-name: slide-in-from-left;
 }
 
-h1 {
-  max-width: 11ch;
-  margin-top: 14px;
-  font-size: clamp(2.8rem, 7vw, 5.4rem);
-  line-height: 0.95;
-  letter-spacing: -0.06em;
-}
-
-.lede {
-  max-width: 62ch;
-  margin-top: 18px;
-  color: #bfdbfe;
-  font-size: 1.05rem;
-  line-height: 1.65;
-}
-
-.pill-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 28px;
-}
-
-.pill {
-  padding: 10px 14px;
-  border-radius: 999px;
-  border: 1px solid rgba(125, 211, 252, 0.2);
-  background: rgba(14, 165, 233, 0.12);
-  color: #dbeafe;
-}
-
-.tracks-grid,
-.blueprint-grid {
-  display: grid;
-  gap: 18px;
-  margin-top: 22px;
-}
-
-.tracks-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.track-card,
-.blueprint-card {
-  border-radius: 24px;
-  padding: 24px;
-}
-
-.track-card h2 {
-  margin-top: 10px;
-  font-size: 1.55rem;
-}
-
-.track-card p,
-.blueprint-card p,
-.blueprint-card li {
-  margin-top: 10px;
-  color: #cbd5e1;
-  line-height: 1.7;
-}
-
-.blueprint-grid {
-  grid-template-columns: 1.15fr 0.85fr;
-}
-
-.blueprint-card ul {
-  padding-left: 18px;
-}
-
-@media (max-width: 900px) {
-  .app-shell {
-    width: min(100% - 24px, 1120px);
-    padding: 24px 0 40px;
-  }
-
-  .hero-panel,
-  .track-card,
-  .blueprint-card {
-    border-radius: 20px;
-  }
-
-  .tracks-grid,
-  .blueprint-grid {
-    grid-template-columns: 1fr;
-  }
+@utility slide-in-from-right {
+  animation-name: slide-in-from-right;
 }

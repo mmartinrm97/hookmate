@@ -207,6 +207,9 @@ importers:
 
   apps/dashboard:
     dependencies:
+      '@hookmate/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
       '@tanstack/react-query':
         specifier: ^5.100.11
         version: 5.100.11(react@19.2.6)
@@ -216,6 +219,9 @@ importers:
       react-dom:
         specifier: ^19.2.6
         version: 19.2.6(react@19.2.6)
+      react-router-dom:
+        specifier: ^7.15.1
+        version: 7.15.1(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       recharts:
         specifier: ^3.8.1
         version: 3.8.1(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react-is@19.2.6)(react@19.2.6)(redux@5.0.1)
@@ -3702,6 +3708,23 @@ packages:
       '@types/react':
         optional: true
       redux:
+        optional: true
+
+  react-router-dom@7.15.1:
+    resolution: {integrity: sha512-AzF62gjY6U9rkMq4RfP/r2EVtQ7DMfNMjyOp/flLTCrtRylLiK4wT4pSq6O8rOXZ2eXdZYJPEYe+ifomiv+Igg==}
+    engines: {node: '>=20.0.0'}
+    peerDependencies:
+      react: '>=18'
+      react-dom: '>=18'
+
+  react-router@7.15.1:
+    resolution: {integrity: sha512-R8rl9HhgikFYoPJymnUtPXWbnDb3oget6lQnfIoupbt61aT9aOhRkDsY2XRhZRyX1Z/8a5sL74fXmFNm3NRK5A==}
+    engines: {node: '>=20.0.0'}
+    peerDependencies:
+      react: '>=18'
+      react-dom: '>=18'
+    peerDependenciesMeta:
+      react-dom:
         optional: true
 
   react@19.2.6:
@@ -7793,6 +7816,20 @@ snapshots:
     optionalDependencies:
       '@types/react': 19.2.15
       redux: 5.0.1
+
+  react-router-dom@7.15.1(react-dom@19.2.6(react@19.2.6))(react@19.2.6):
+    dependencies:
+      react: 19.2.6
+      react-dom: 19.2.6(react@19.2.6)
+      react-router: 7.15.1(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
+
+  react-router@7.15.1(react-dom@19.2.6(react@19.2.6))(react@19.2.6):
+    dependencies:
+      cookie: 1.1.1
+      react: 19.2.6
+      set-cookie-parser: 2.7.2
+    optionalDependencies:
+      react-dom: 19.2.6(react@19.2.6)
 
   react@19.2.6: {}
 
