@@ -108,6 +108,40 @@ export class EventsService {
     return saved.toPrimitive();
   }
 
+  /**
+   * Returns events where category IS NULL for the given endpoint and time range,
+   * ordered by receivedAt DESC. No pagination is applied.
+   */
+  async getUncategorizedEvents(
+    endpointId: string,
+    from: string,
+    to: string,
+  ): Promise<HookMateEvent[]> {
+    const qb = this.repo.createQueryBuilder('event');
+
+    qb.andWhere('event.endpointId = :endpointId', { endpointId });
+    qb.andWhere('event.category IS NULL');
+    qb.andWhere('event.receivedAt BETWEEN :from AND :to', { from, to });
+    qb.orderBy('event.receivedAt', 'DESC');
+
+    const entities = await qb.getMany();
+
+    return entities.map((entity) => entity.toPrimitive());
+  }
+
+  /**
+   * Bulk-update event categories in a single transaction.
+   * Takes a Map of eventId → category strings.
+   * Events not in the map remain unchanged.
+   */
+  async batchUpdateCategories(updates: Map<string, string>): Promise<void> {
+    await this.repo.manager.transaction(async (manager) => {
+      for (const [eventId, category] of updates) {
+        await manager.update(Event, eventId, { category });
+      }
+    });
+  }
+
   async create(input: CreateEventInput): Promise<HookMateEvent> {
     const entity = this.repo.create({
       id: input.id,
