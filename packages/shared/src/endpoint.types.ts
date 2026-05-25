@@ -21,3 +21,5 @@ export interface CreateHookMateEndpointInput {
   retryBaseDelayMs?: number;
   dlqThreshold?: number;
 }
+
+export type UpdateHookMateEndpointInput = Partial<CreateHookMateEndpointInput>;
