@@ -22,6 +22,7 @@
     "test:e2e": "vitest run --config ./test/vitest-e2e.config.ts"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^3.0.65",
     "@aws-sdk/client-secrets-manager": "^3.0.0",
     "@aws-sdk/client-sns": "^3.0.0",
     "@aws-sdk/client-sqs": "^3.0.0",
@@ -37,6 +38,7 @@
     "@nestjs/swagger": "^11.2.1",
     "@nestjs/terminus": "^11.1.1",
     "@nestjs/typeorm": "^11.0.1",
+    "ai": "^6.0.190",
     "axios": "^1.16.1",
     "bull": "^4.0.0",
     "class-transformer": "^0.5.1",

@@ -60,7 +60,11 @@ describe('EventsService', () => {
       skip: vi.fn().mockReturnThis(),
       take: vi.fn().mockReturnThis(),
       orderBy: vi.fn().mockReturnThis(),
+      getMany: vi.fn(),
       getManyAndCount: vi.fn(),
+      update: vi.fn(),
+      set: vi.fn(),
+      execute: vi.fn(),
     };
 
     mockRepo = {
@@ -394,6 +398,79 @@ describe('EventsService', () => {
 
       expect(endpointCall).toBeDefined();
       expect(statusCall).toBeDefined();
+    });
+  });
+
+  describe('getUncategorizedEvents()', () => {
+    it('returns uncategorized events for an endpoint within date range', async () => {
+      const entity1 = createMockEntity({ id: 'event-1', category: null });
+      const entity2 = createMockEntity({ id: 'event-2', category: null });
+      const qb = mockRepo.createQueryBuilder();
+      qb.getMany.mockResolvedValue([entity1, entity2]);
+
+      const from = '2026-01-01T00:00:00.000Z';
+      const to = '2026-01-15T23:59:59.000Z';
+      const result = await service.getUncategorizedEvents('ep-01JHQ', from, to);
+
+      expect(result).toHaveLength(2);
+      expect(result[0]?.id).toBe('event-1');
+      expect(qb.andWhere).toHaveBeenCalledWith('event.endpointId = :endpointId', {
+        endpointId: 'ep-01JHQ',
+      });
+      expect(qb.andWhere).toHaveBeenCalledWith('event.category IS NULL');
+      expect(qb.andWhere).toHaveBeenCalledWith('event.receivedAt BETWEEN :from AND :to', {
+        from,
+        to,
+      });
+      expect(qb.orderBy).toHaveBeenCalledWith('event.receivedAt', 'DESC');
+      expect(qb.getMany).toHaveBeenCalled();
+    });
+
+    it('returns empty array when no uncategorized events exist', async () => {
+      const qb = mockRepo.createQueryBuilder();
+      qb.getMany.mockResolvedValue([]);
+
+      const result = await service.getUncategorizedEvents(
+        'ep-01JHQ',
+        '2026-01-01T00:00:00.000Z',
+        '2026-01-15T23:59:59.000Z',
+      );
+
+      expect(result).toEqual([]);
+    });
+
+    it('does not paginate results', async () => {
+      const qb = mockRepo.createQueryBuilder();
+      qb.getMany.mockResolvedValue([]);
+
+      await service.getUncategorizedEvents(
+        'ep-01JHQ',
+        '2026-01-01T00:00:00.000Z',
+        '2026-01-15T23:59:59.000Z',
+      );
+
+      expect(qb.skip).not.toHaveBeenCalled();
+      expect(qb.take).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('batchUpdateCategories()', () => {
+    it('updates each event category via repo.update in a transaction', async () => {
+      mockRepo.manager = {
+        transaction: vi.fn().mockImplementation(async (cb: (m: unknown) => Promise<void>) => {
+          const mockManager = { update: vi.fn().mockResolvedValue({ affected: 1 }) };
+          await cb(mockManager);
+        }),
+      };
+
+      const updates = new Map<string, string>([
+        ['evt-1', 'payment.charge'],
+        ['evt-2', 'auth.login'],
+      ]);
+
+      await service.batchUpdateCategories(updates);
+
+      expect(mockRepo.manager.transaction).toHaveBeenCalled();
     });
   });
 });

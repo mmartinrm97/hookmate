@@ -32,6 +32,7 @@ export const envSchema = z.object({
 
   // OpenAI
   OPENAI_API_KEY: z.string().optional(),
+  AI_MODEL: z.string().default('gpt-4o-mini'),
 
   // Auth
   API_KEYS: z.string().default('dev-key-123'),

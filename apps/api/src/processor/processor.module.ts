@@ -25,6 +25,9 @@ import { SqsConsumerService } from './sqs-consumer.service';
     BullModule.registerQueue({
       name: 'retries',
     }),
+    BullModule.registerQueue({
+      name: 'ai-summaries',
+    }),
     EventsModule,
     EndpointsModule,
     DeliveryAttemptsModule,
