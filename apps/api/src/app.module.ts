@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AiSummariesModule } from './ai-summaries/ai-summaries.module';
+import { AuthModule } from './auth/auth.module';
 import { CoreModule } from './core/core.module';
 import { DeliveryAttemptsModule } from './delivery-attempts/delivery-attempts.module';
 import { DlqEventsModule } from './dlq-events/dlq-events.module';
@@ -13,6 +14,7 @@ import { SqsModule } from './sqs/sqs.module';
 
 @Module({
   imports: [
+    AuthModule,
     CoreModule,
     HealthModule,
     EndpointsModule,

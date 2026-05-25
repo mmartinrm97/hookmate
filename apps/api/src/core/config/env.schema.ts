@@ -34,7 +34,7 @@ export const envSchema = z.object({
   OPENAI_API_KEY: z.string().optional(),
 
   // Auth
-  API_KEYS: z.string().optional(),
+  API_KEYS: z.string().default('dev-key-123'),
   JWT_SECRET: z.string().optional(),
 
   // CORS
