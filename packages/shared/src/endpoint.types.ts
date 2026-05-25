@@ -22,4 +22,11 @@ export interface CreateHookMateEndpointInput {
   dlqThreshold?: number;
 }
 
-export type UpdateHookMateEndpointInput = Partial<CreateHookMateEndpointInput>;
+export interface UpdateHookMateEndpointInput {
+  name?: string;
+  destinationUrl?: string;
+  secret?: string;
+  maxRetries?: number;
+  retryBaseDelayMs?: number;
+  dlqThreshold?: number;
+}
