@@ -1,11 +1,25 @@
 import type { HookMateAiSummary } from '@hookmate/shared';
+import { InjectQueue } from '@nestjs/bull';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import type { Queue } from 'bull';
 import { Repository } from 'typeorm';
 import { AiSummary } from './entities/ai-summary.entity';
+import type { AiSummaryJobData } from './ai-summaries.types';
 
 export interface GenerateSummaryResult {
   jobId: string;
+}
+
+export interface UpsertAiSummaryInput {
+  endpointId: string;
+  periodStart: string;
+  periodEnd: string;
+  summaryText: string;
+  eventCount: number | null;
+  failureCount: number | null;
+  topCategories: Record<string, number> | null;
+  model: string | null;
 }
 
 @Injectable()
@@ -13,6 +27,8 @@ export class AiSummariesService {
   constructor(
     @InjectRepository(AiSummary)
     private readonly repo: Repository<AiSummary>,
+    @InjectQueue('ai-summaries')
+    private readonly aiSummariesQueue: Queue,
   ) {}
 
   async list(): Promise<HookMateAiSummary[]> {
@@ -55,10 +71,38 @@ export class AiSummariesService {
     return entities.map((entity) => entity.toPrimitive());
   }
 
-  generateOnDemand(endpointId: string): GenerateSummaryResult {
-    // STUB: No real OpenAI integration yet
-    // In production, this would verify endpoint exists, enqueue a BullMQ job,
-    // and return the job ID. For now, return a placeholder jobId.
-    return { jobId: `stub-${endpointId}-${Date.now()}` };
+  /**
+   * Upsert an AI summary for an endpoint + period combination.
+   * Uses TypeORM upsert with conflict on the composite unique constraint.
+   */
+  async upsert(input: UpsertAiSummaryInput): Promise<HookMateAiSummary> {
+    const entity = this.repo.create({
+      endpointId: { id: input.endpointId } as never,
+      periodStart: new Date(input.periodStart),
+      periodEnd: new Date(input.periodEnd),
+      summaryText: input.summaryText,
+      eventCount: input.eventCount,
+      failureCount: input.failureCount,
+      topCategories: input.topCategories,
+      model: input.model,
+    });
+
+    await this.repo.upsert(entity, ['endpointId', 'periodStart']);
+
+    // Return a primitive representation of what was upserted
+    return entity.toPrimitive();
+  }
+
+  /**
+   * Enqueue an on-demand summary generation job for the given endpoint.
+   * Returns a BullMQ job ID.
+   */
+  async generateOnDemand(endpointId: string): Promise<GenerateSummaryResult> {
+    const job = await this.aiSummariesQueue.add('generate-summary', {
+      jobType: 'on-demand',
+      endpointId,
+    } satisfies AiSummaryJobData);
+
+    return { jobId: String(job.id) };
   }
 }

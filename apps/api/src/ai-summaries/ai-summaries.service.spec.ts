@@ -1,5 +1,6 @@
 import type { HookMateAiSummary } from '@hookmate/shared';
 import { NotFoundException } from '@nestjs/common';
+import { getQueueToken } from '@nestjs/bull';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -41,22 +42,29 @@ function createMockEntity(overrides: Partial<AiSummary> = {}): AiSummary {
   } as unknown as AiSummary;
 }
 
+function createMockRepo() {
+  return {
+    find: vi.fn(),
+    findOne: vi.fn(),
+    create: vi.fn(),
+    createQueryBuilder: vi.fn(),
+    save: vi.fn(),
+    upsert: vi.fn(),
+  };
+}
+
+function createMockQueue() {
+  return { add: vi.fn() };
+}
+
 describe('AiSummariesService', () => {
   let service: AiSummariesService;
-  let mockRepo: {
-    find: ReturnType<typeof vi.fn>;
-    findOne: ReturnType<typeof vi.fn>;
-    createQueryBuilder: ReturnType<typeof vi.fn>;
-    save: ReturnType<typeof vi.fn>;
-  };
+  let mockRepo: ReturnType<typeof createMockRepo>;
+  let mockQueue: ReturnType<typeof createMockQueue>;
 
   beforeEach(async () => {
-    mockRepo = {
-      find: vi.fn(),
-      findOne: vi.fn(),
-      createQueryBuilder: vi.fn(),
-      save: vi.fn(),
-    };
+    mockRepo = createMockRepo();
+    mockQueue = createMockQueue();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -64,6 +72,10 @@ describe('AiSummariesService', () => {
         {
           provide: getRepositoryToken(AiSummary),
           useValue: mockRepo,
+        },
+        {
+          provide: getQueueToken('ai-summaries'),
+          useValue: mockQueue,
         },
       ],
     }).compile();
@@ -216,12 +228,97 @@ describe('AiSummariesService', () => {
     });
   });
 
-  describe('generateOnDemand()', () => {
-    it('returns a jobId when endpointId is provided', () => {
-      const result = service.generateOnDemand('ep-01JHQ');
+  describe('upsert()', () => {
+    const upsertInput = {
+      endpointId: 'ep-01JHQ',
+      periodStart: '2026-01-15T00:00:00.000Z',
+      periodEnd: '2026-01-15T23:59:59.000Z',
+      summaryText: 'Most events delivered successfully.',
+      eventCount: 150,
+      failureCount: 2,
+      topCategories: { 'payment.charge': 100, 'auth.login': 50 } as Record<string, number>,
+      model: 'gpt-4o-mini',
+    };
 
-      expect(result).toHaveProperty('jobId');
-      expect(typeof result.jobId).toBe('string');
+    function setupMockCreate(): void {
+      mockRepo.create.mockImplementation((data: Record<string, unknown>) => {
+        const result = {
+          ...data,
+          toPrimitive() {
+            return {
+              endpointId:
+                typeof data.endpointId === 'object'
+                  ? (data.endpointId as { id: string }).id
+                  : (data.endpointId as string),
+              periodStart: (data.periodStart as Date).toISOString(),
+              periodEnd: (data.periodEnd as Date).toISOString(),
+              summaryText: data.summaryText as string,
+              eventCount: data.eventCount as number,
+              failureCount: data.failureCount as number,
+              topCategories: data.topCategories as Record<string, number>,
+              model: data.model as string,
+              generatedAt: new Date().toISOString(),
+              id: 1,
+            };
+          },
+        };
+        return result as unknown as AiSummary;
+      });
+    }
+
+    it('inserts a new summary via upsert on conflict endpointId+periodStart', async () => {
+      setupMockCreate();
+      mockRepo.upsert.mockResolvedValue({ raw: [], generatedMaps: [] });
+
+      const result = await service.upsert(upsertInput);
+
+      expect(result.endpointId).toBe('ep-01JHQ');
+      expect(result.summaryText).toBe('Most events delivered successfully.');
+      expect(mockRepo.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          endpointId: expect.objectContaining({ id: 'ep-01JHQ' }),
+          periodStart: new Date('2026-01-15T00:00:00.000Z'),
+          periodEnd: new Date('2026-01-15T23:59:59.000Z'),
+        }),
+        ['endpointId', 'periodStart'],
+      );
+    });
+
+    it('updates an existing summary when the same endpointId+periodStart exists', async () => {
+      setupMockCreate();
+      mockRepo.upsert.mockResolvedValue({ raw: [], generatedMaps: [] });
+
+      const updated = {
+        ...upsertInput,
+        summaryText: 'Updated summary text.',
+        eventCount: 200,
+      };
+
+      const result = await service.upsert(updated);
+
+      expect(result.summaryText).toBe('Updated summary text.');
+      expect(result.eventCount).toBe(200);
+      expect(mockRepo.upsert).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('generateOnDemand()', () => {
+    it('enqueues a BullMQ job to ai-summaries queue and returns job ID', async () => {
+      mockQueue.add.mockResolvedValue({ id: 'bull-job-123' });
+
+      const result = await service.generateOnDemand('ep-01JHQ');
+
+      expect(result.jobId).toBe('bull-job-123');
+      expect(mockQueue.add).toHaveBeenCalledWith('generate-summary', {
+        jobType: 'on-demand',
+        endpointId: 'ep-01JHQ',
+      });
+    });
+
+    it('throws when queue.add fails', async () => {
+      mockQueue.add.mockRejectedValue(new Error('Redis connection lost'));
+
+      await expect(service.generateOnDemand('ep-01JHQ')).rejects.toThrow('Redis connection lost');
     });
   });
 });
