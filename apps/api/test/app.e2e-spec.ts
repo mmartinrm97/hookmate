@@ -1,6 +1,6 @@
+import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
-import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { DataSource } from 'typeorm';
 import { AppModule } from './../src/app.module';
 import { configureApp } from './../src/configure-app.js';
@@ -154,7 +154,7 @@ describe.skipIf(!process.env.POSTGRES_HOST)('Database schema (e2e)', () => {
     const eventRepo = dataSource.getRepository('Event');
     const event = eventRepo.create({
       id: '01TESTEVENT000000000002',
-      endpointId: { id: '01NONEXISTENT0000000000' } as any,
+      endpointId: { id: '01NONEXISTENT0000000000' } as never,
       payload: { type: 'test' },
       status: 'received',
     });
