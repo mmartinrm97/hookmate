@@ -104,6 +104,97 @@ describe('HookMateDlqEvent types', () => {
   });
 });
 
+describe('PaginatedResponse type', () => {
+  it('constructs a PaginatedResponse with items', () => {
+    const response: import('./pagination.types.js').PaginatedResponse<{ id: string }> = {
+      items: [{ id: '1' }, { id: '2' }],
+      total: 2,
+      page: 1,
+      limit: 50,
+    };
+    expect(response.items).toHaveLength(2);
+    expect(response.total).toBe(2);
+    expect(response.page).toBe(1);
+    expect(response.limit).toBe(50);
+  });
+
+  it('constructs PaginatedResponse with empty items array', () => {
+    const response: import('./pagination.types.js').PaginatedResponse<number> = {
+      items: [],
+      total: 0,
+      page: 1,
+      limit: 50,
+    };
+    expect(response.items).toHaveLength(0);
+    expect(response.total).toBe(0);
+  });
+});
+
+describe('QueryParams interface', () => {
+  it('constructs QueryParams with defaults', () => {
+    const params: import('./pagination.types.js').QueryParams = {};
+    expect(params.page).toBeUndefined();
+    expect(params.limit).toBeUndefined();
+  });
+
+  it('constructs QueryParams with page and limit', () => {
+    const params: import('./pagination.types.js').QueryParams = {
+      page: 2,
+      limit: 25,
+    };
+    expect(params.page).toBe(2);
+    expect(params.limit).toBe(25);
+  });
+});
+
+describe('UpdateHookMateEndpointInput type', () => {
+  it('constructs with partial fields', () => {
+    const input: import('./endpoint.types.js').UpdateHookMateEndpointInput = {
+      name: 'Updated name',
+    };
+    expect(input.name).toBe('Updated name');
+    expect(input.destinationUrl).toBeUndefined();
+  });
+
+  it('accepts all optional fields', () => {
+    const input: import('./endpoint.types.js').UpdateHookMateEndpointInput = {
+      name: 'Updated',
+      destinationUrl: 'https://example.com/updated',
+      maxRetries: 3,
+      retryBaseDelayMs: 3000,
+      dlqThreshold: 50,
+      secret: 'new_secret',
+    };
+    expect(input.secret).toBe('new_secret');
+    expect(input.maxRetries).toBe(3);
+  });
+});
+
+describe('CreateHookMateRoutingRuleInput type', () => {
+  it('constructs with all fields', () => {
+    const input: import('./routing-rule.types.js').CreateHookMateRoutingRuleInput = {
+      priority: 10,
+      matchType: 'header',
+      matchKey: 'X-Region',
+      matchValue: 'us-east-1',
+      destinationType: 'http',
+      destinationUrl: 'https://region.example.com/webhook',
+    };
+    expect(input.priority).toBe(10);
+    expect(input.matchType).toBe('header');
+  });
+
+  it('constructs with minimum fields', () => {
+    const input: import('./routing-rule.types.js').CreateHookMateRoutingRuleInput = {
+      priority: 1,
+      matchType: 'source_ip',
+    };
+    expect(input.priority).toBe(1);
+    expect(input.matchKey).toBeUndefined();
+    expect(input.destinationType).toBeUndefined();
+  });
+});
+
 describe('HookMateRoutingRule types', () => {
   it('exports HookMateMatchType and HookMateDestinationType values', () => {
     const matchTypes: string[] = ['header', 'json_path', 'source_ip'];
@@ -169,6 +260,22 @@ describe('index.ts barrel exports', () => {
   it('re-exports all type symbols (verifiable by name)', async () => {
     // Dynamic import ensures the barrel resolves correctly.
     const mod = await import('./index.js');
+    expect(mod).toBeDefined();
+  });
+
+  it('re-exports PaginatedResponse and QueryParams', async () => {
+    const mod = await import('./pagination.types.js');
+    expect(mod).toBeDefined();
+  });
+
+  it('re-exports UpdateHookMateEndpointInput', async () => {
+    const mod = (await import('./endpoint.types.js')) as Record<string, unknown>;
+    expect(mod.UpdateHookMateEndpointInput).toBeUndefined(); // type-only, no runtime value
+    expect(mod).toBeDefined();
+  });
+
+  it('re-exports CreateHookMateRoutingRuleInput', async () => {
+    const mod = await import('./routing-rule.types.js');
     expect(mod).toBeDefined();
   });
 });

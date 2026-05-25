@@ -1,7 +1,25 @@
 import type { HookMateEndpoint } from '@hookmate/shared';
-import { Body, Controller, Get, Inject, Param, Patch, Post } from '@nestjs/common';
-import { ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Inject,
+  Param,
+  Patch,
+  Post,
+} from '@nestjs/common';
+import {
+  ApiCreatedResponse,
+  ApiNoContentResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
 import { CreateEndpointDto } from './dto/create-endpoint.dto';
+import { UpdateEndpointDto } from './dto/update-endpoint.dto';
 import { EndpointsService } from './endpoints.service';
 
 @ApiTags('endpoints')
@@ -28,6 +46,24 @@ export class EndpointsController {
   @Post()
   async create(@Body() body: CreateEndpointDto): Promise<HookMateEndpoint> {
     return this.endpointsService.create(body);
+  }
+
+  @ApiOperation({ summary: 'Update an endpoint (partial)' })
+  @ApiOkResponse({ description: 'Endpoint updated.' })
+  @Patch(':id')
+  async update(
+    @Param('id') id: string,
+    @Body() body: UpdateEndpointDto,
+  ): Promise<HookMateEndpoint> {
+    return this.endpointsService.update(id, body);
+  }
+
+  @ApiOperation({ summary: 'Soft-delete an endpoint' })
+  @ApiNoContentResponse({ description: 'Endpoint soft-deleted.' })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Delete(':id')
+  async softDelete(@Param('id') id: string): Promise<void> {
+    await this.endpointsService.softDelete(id);
   }
 
   @ApiOperation({ summary: 'Pause an endpoint' })

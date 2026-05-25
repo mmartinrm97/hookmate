@@ -1,4 +1,4 @@
-import type { HookMateEndpoint } from '@hookmate/shared';
+import type { HookMateEndpoint, UpdateHookMateEndpointInput } from '@hookmate/shared';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
@@ -88,6 +88,25 @@ describe('EndpointsService', () => {
       expect(result).toHaveLength(2);
       expect(result[0]?.id).toBe('entity-1');
       expect(result[1]?.id).toBe('entity-2');
+    });
+
+    it('excludes soft-deleted endpoints from the list', async () => {
+      const active = createMockEntity({
+        id: 'entity-1',
+        name: 'Active',
+        status: 'active' as const,
+      });
+      const deleted = createMockEntity({
+        id: 'entity-2',
+        name: 'Deleted',
+        status: 'deleted' as const,
+      });
+      mockRepo.find.mockResolvedValue([active, deleted]);
+
+      const result = await service.list();
+
+      expect(result).toHaveLength(1);
+      expect(result[0]?.id).toBe('entity-1');
     });
   });
 
@@ -225,6 +244,89 @@ describe('EndpointsService', () => {
       mockRepo.findOne.mockResolvedValue(entity);
 
       await expect(service.resume('active-id')).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('update()', () => {
+    it('updates partial fields and returns the updated endpoint', async () => {
+      const existingId = 'endpoint-to-update';
+      const existing = createMockEntity({
+        id: existingId,
+        name: 'Original name',
+        destinationUrl: 'https://original.example.com',
+        secret: undefined,
+        maxRetries: 5,
+      });
+      const updated = createMockEntity({
+        id: existingId,
+        name: 'Updated name',
+        destinationUrl: 'https://original.example.com',
+        status: 'active',
+        secret: undefined,
+        maxRetries: 3,
+        updatedAt: new Date('2026-01-15T13:00:00Z'),
+      });
+      mockRepo.findOne.mockResolvedValueOnce(existing);
+      mockRepo.save.mockResolvedValue(updated);
+
+      const input: UpdateHookMateEndpointInput = { name: 'Updated name', maxRetries: 3 };
+      const result = await service.update(existingId, input);
+
+      expect(result.name).toBe('Updated name');
+      expect(result.maxRetries).toBe(3);
+      expect(result.destinationUrl).toBe('https://original.example.com');
+      expect(mockRepo.findOne).toHaveBeenCalledWith({ where: { id: existingId } });
+      expect(mockRepo.save).toHaveBeenCalled();
+    });
+
+    it('validates destinationUrl if provided in update', async () => {
+      const existing = createMockEntity();
+      mockRepo.findOne.mockResolvedValueOnce(existing);
+
+      await expect(
+        service.update('existing-id', {
+          destinationUrl: 'not-a-valid-url',
+        }),
+      ).rejects.toThrow('Destination URL must be a valid absolute URL');
+
+      expect(mockRepo.save).not.toHaveBeenCalled();
+    });
+
+    it('throws NotFoundException when endpoint does not exist', async () => {
+      mockRepo.findOne.mockResolvedValue(null);
+
+      await expect(service.update('nonexistent', { name: 'New name' })).rejects.toThrow(
+        NotFoundException,
+      );
+
+      expect(mockRepo.save).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('softDelete()', () => {
+    it('sets status to deleted and returns the updated endpoint', async () => {
+      const existingId = 'endpoint-to-delete';
+      const existing = createMockEntity({ id: existingId, status: 'active' as const });
+      const deleted = createMockEntity({
+        id: existingId,
+        status: 'deleted' as const,
+        updatedAt: new Date('2026-01-15T13:00:00Z'),
+      });
+      mockRepo.findOne.mockResolvedValueOnce(existing);
+      mockRepo.save.mockResolvedValue(deleted);
+
+      const result = await service.softDelete(existingId);
+
+      expect(result.status).toBe('deleted');
+      expect(mockRepo.findOne).toHaveBeenCalledWith({ where: { id: existingId } });
+      expect(mockRepo.save).toHaveBeenCalled();
+    });
+
+    it('throws NotFoundException when endpoint does not exist', async () => {
+      mockRepo.findOne.mockResolvedValue(null);
+
+      await expect(service.softDelete('nonexistent')).rejects.toThrow(NotFoundException);
+      expect(mockRepo.save).not.toHaveBeenCalled();
     });
   });
 });

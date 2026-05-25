@@ -21,3 +21,12 @@ export interface CreateHookMateEndpointInput {
   retryBaseDelayMs?: number;
   dlqThreshold?: number;
 }
+
+export interface UpdateHookMateEndpointInput {
+  name?: string;
+  destinationUrl?: string;
+  secret?: string;
+  maxRetries?: number;
+  retryBaseDelayMs?: number;
+  dlqThreshold?: number;
+}

@@ -1,5 +1,5 @@
-import type { HookMateRoutingRule } from '@hookmate/shared';
-import { NotFoundException } from '@nestjs/common';
+import type { CreateHookMateRoutingRuleInput, HookMateRoutingRule } from '@hookmate/shared';
+import { ConflictException, NotFoundException } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -44,12 +44,18 @@ describe('RoutingRulesService', () => {
   let mockRepo: {
     find: ReturnType<typeof vi.fn>;
     findOne: ReturnType<typeof vi.fn>;
+    create: ReturnType<typeof vi.fn>;
+    save: ReturnType<typeof vi.fn>;
+    delete: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(async () => {
     mockRepo = {
       find: vi.fn(),
       findOne: vi.fn(),
+      create: vi.fn(),
+      save: vi.fn(),
+      delete: vi.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -146,6 +152,94 @@ describe('RoutingRulesService', () => {
       const result = await service.getByEndpointId('ep-no-rules');
 
       expect(result).toEqual([]);
+    });
+  });
+
+  describe('create()', () => {
+    it('creates a routing rule for an endpoint', async () => {
+      const input: CreateHookMateRoutingRuleInput = {
+        priority: 10,
+        matchType: 'header',
+        matchKey: 'X-Api-Key',
+        matchValue: 'sk-123',
+        destinationType: 'http',
+        destinationUrl: 'https://example.com/hook',
+      };
+      const entity = createMockEntity({ id: 1, ...input });
+      mockRepo.create.mockReturnValue(entity);
+      mockRepo.save.mockResolvedValue(entity);
+
+      const result = await service.create('ep-01JHQ', input);
+
+      expect(result.id).toBe(1);
+      expect(result.priority).toBe(10);
+      expect(mockRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          endpointId: { id: 'ep-01JHQ' },
+          priority: 10,
+          matchType: 'header',
+        }),
+      );
+      expect(mockRepo.save).toHaveBeenCalledWith(entity);
+    });
+
+    it('throws ConflictException when priority already exists for endpoint', async () => {
+      const input: CreateHookMateRoutingRuleInput = {
+        priority: 10,
+        matchType: 'header',
+        matchKey: 'X-Api-Key',
+        matchValue: 'sk-123',
+      };
+      mockRepo.create.mockReturnValue(createMockEntity());
+      mockRepo.save.mockRejectedValue({ code: '23505' });
+
+      await expect(service.create('ep-01JHQ', input)).rejects.toThrow(ConflictException);
+    });
+  });
+
+  describe('update()', () => {
+    it('updates a routing rule with partial fields', async () => {
+      const entity = createMockEntity({ id: 1, priority: 10 });
+      mockRepo.findOne.mockResolvedValue(entity);
+      mockRepo.save.mockResolvedValue({ ...entity, priority: 20 });
+
+      const result = await service.update(1, { priority: 20 });
+
+      expect(result.id).toBe(1);
+      expect(result.priority).toBe(20);
+      expect(mockRepo.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
+    });
+
+    it('throws NotFoundException when rule does not exist', async () => {
+      mockRepo.findOne.mockResolvedValue(null);
+
+      await expect(service.update(999, { priority: 10 })).rejects.toThrow(NotFoundException);
+    });
+
+    it('throws ConflictException when updated priority causes duplicate', async () => {
+      const entity = createMockEntity({ id: 1, priority: 10 });
+      mockRepo.findOne.mockResolvedValue(entity);
+      mockRepo.save.mockRejectedValue({ code: '23505' });
+
+      await expect(service.update(1, { priority: 20 })).rejects.toThrow(ConflictException);
+    });
+  });
+
+  describe('delete()', () => {
+    it('deletes a routing rule by id', async () => {
+      const entity = createMockEntity({ id: 1 });
+      mockRepo.findOne.mockResolvedValue(entity);
+      mockRepo.delete.mockResolvedValue({ affected: 1, raw: {} });
+
+      await service.delete(1);
+
+      expect(mockRepo.delete).toHaveBeenCalledWith(1);
+    });
+
+    it('throws NotFoundException when rule does not exist', async () => {
+      mockRepo.findOne.mockResolvedValue(null);
+
+      await expect(service.delete(999)).rejects.toThrow(NotFoundException);
     });
   });
 });

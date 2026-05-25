@@ -6,6 +6,7 @@ import {
   MemoryHealthIndicator,
   TypeOrmHealthIndicator,
 } from '@nestjs/terminus';
+import { Public } from '../auth/public.decorator';
 
 @ApiTags('health')
 @Controller({ version: '1' })
@@ -16,6 +17,7 @@ export class HealthController {
     @Inject(MemoryHealthIndicator) private readonly memory: MemoryHealthIndicator,
   ) {}
 
+  @Public()
   @ApiOperation({ summary: 'Read API health status' })
   @Get('health')
   @HealthCheck()
@@ -26,6 +28,7 @@ export class HealthController {
     ]);
   }
 
+  @Public()
   @ApiOperation({ summary: 'Read API entrypoint metadata' })
   @Get()
   getRoot(): { docs: string; endpoints: string; health: string; service: string } {

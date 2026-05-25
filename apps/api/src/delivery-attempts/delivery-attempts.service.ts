@@ -27,6 +27,15 @@ export class DeliveryAttemptsService {
     return entities.map((entity) => entity.toPrimitive());
   }
 
+  async getByEventId(eventId: string): Promise<HookMateDeliveryAttempt[]> {
+    const entities = await this.repo.find({
+      where: { eventId: { id: eventId } as never },
+      order: { attemptNumber: 'ASC' },
+    });
+
+    return entities.map((entity) => entity.toPrimitive());
+  }
+
   async getById(id: number): Promise<HookMateDeliveryAttempt> {
     const entity = await this.repo.findOne({ where: { id } });
 

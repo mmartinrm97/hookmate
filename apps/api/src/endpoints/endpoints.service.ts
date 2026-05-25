@@ -2,6 +2,7 @@ import type {
   CreateHookMateEndpointInput,
   HookMateEndpoint,
   HookMateEndpointStatus,
+  UpdateHookMateEndpointInput,
 } from '@hookmate/shared';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -23,7 +24,9 @@ export class EndpointsService {
   async list(): Promise<HookMateEndpoint[]> {
     const entities = await this.repo.find({ order: { createdAt: 'DESC' } });
 
-    return entities.map((entity) => entity.toPrimitive());
+    return entities
+      .filter((entity) => entity.status !== 'deleted')
+      .map((entity) => entity.toPrimitive());
   }
 
   async getById(id: string): Promise<HookMateEndpoint> {
@@ -63,6 +66,65 @@ export class EndpointsService {
     return this.updateStatus(id, 'active');
   }
 
+  async update(id: string, input: UpdateHookMateEndpointInput): Promise<HookMateEndpoint> {
+    const entity = await this.repo.findOne({ where: { id } });
+
+    if (!entity) {
+      throw new NotFoundException(`Endpoint ${id} was not found.`);
+    }
+
+    // Use Record<string, unknown> to avoid oxlint mapped-type limitation
+    const patch: Record<string, unknown> = input as Record<string, unknown>;
+
+    const fieldName = patch.name as string | undefined;
+    if (fieldName !== undefined) {
+      entity.name = fieldName.trim();
+    }
+
+    const fieldUrl = patch.destinationUrl as string | undefined;
+    if (fieldUrl !== undefined) {
+      this.assertValidUrl(fieldUrl);
+      entity.destinationUrl = fieldUrl.trim();
+    }
+
+    const fieldSecret = patch.secret as string | undefined;
+    if (fieldSecret !== undefined) {
+      entity.secret = fieldSecret;
+    }
+
+    const fieldRetries = patch.maxRetries as number | undefined;
+    if (fieldRetries !== undefined) {
+      entity.maxRetries = fieldRetries;
+    }
+
+    const fieldDelay = patch.retryBaseDelayMs as number | undefined;
+    if (fieldDelay !== undefined) {
+      entity.retryBaseDelayMs = fieldDelay;
+    }
+
+    const fieldThreshold = patch.dlqThreshold as number | undefined;
+    if (fieldThreshold !== undefined) {
+      entity.dlqThreshold = fieldThreshold;
+    }
+
+    const saved = await this.repo.save(entity);
+
+    return saved.toPrimitive();
+  }
+
+  async softDelete(id: string): Promise<HookMateEndpoint> {
+    const entity = await this.repo.findOne({ where: { id } });
+
+    if (!entity) {
+      throw new NotFoundException(`Endpoint ${id} was not found.`);
+    }
+
+    entity.status = 'deleted' as HookMateEndpointStatus;
+    const saved = await this.repo.save(entity);
+
+    return saved.toPrimitive();
+  }
+
   private async updateStatus(
     id: string,
     status: HookMateEndpointStatus,
@@ -100,15 +162,19 @@ export class EndpointsService {
       throw new BadRequestException('Destination URL is required.');
     }
 
-    let url: URL;
+    this.assertValidUrl(input.destinationUrl);
+  }
+
+  private assertValidUrl(url: string): void {
+    let parsed: URL;
 
     try {
-      url = new URL(input.destinationUrl);
+      parsed = new URL(url);
     } catch {
       throw new BadRequestException('Destination URL must be a valid absolute URL.');
     }
 
-    if (!['http:', 'https:'].includes(url.protocol)) {
+    if (!['http:', 'https:'].includes(parsed.protocol)) {
       throw new BadRequestException('Destination URL must use HTTP or HTTPS.');
     }
   }

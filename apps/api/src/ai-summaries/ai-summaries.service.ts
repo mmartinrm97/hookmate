@@ -4,6 +4,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AiSummary } from './entities/ai-summary.entity';
 
+export interface GenerateSummaryResult {
+  jobId: string;
+}
+
 @Injectable()
 export class AiSummariesService {
   constructor(
@@ -25,5 +29,36 @@ export class AiSummariesService {
     }
 
     return entity.toPrimitive();
+  }
+
+  async listByEndpoint(
+    endpointId: string,
+    from?: string,
+    to?: string,
+  ): Promise<HookMateAiSummary[]> {
+    const qb = this.repo.createQueryBuilder('summary');
+
+    qb.andWhere('summary.endpointId = :endpointId', { endpointId });
+
+    if (from) {
+      qb.andWhere('summary.periodStart >= :from', { from });
+    }
+
+    if (to) {
+      qb.andWhere('summary.periodEnd <= :to', { to });
+    }
+
+    qb.orderBy('summary.generatedAt', 'DESC');
+
+    const entities = await qb.getMany();
+
+    return entities.map((entity) => entity.toPrimitive());
+  }
+
+  generateOnDemand(endpointId: string): GenerateSummaryResult {
+    // STUB: No real OpenAI integration yet
+    // In production, this would verify endpoint exists, enqueue a BullMQ job,
+    // and return the job ID. For now, return a placeholder jobId.
+    return { jobId: `stub-${endpointId}-${Date.now()}` };
   }
 }

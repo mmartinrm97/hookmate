@@ -1,5 +1,6 @@
 import type { HookMateDlqEvent } from '@hookmate/shared';
-import { NotFoundException } from '@nestjs/common';
+import { ConflictException, NotFoundException } from '@nestjs/common';
+import { getQueueToken } from '@nestjs/bull';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -50,6 +51,11 @@ describe('DlqEventsService', () => {
     findOne: ReturnType<typeof vi.fn>;
     create: ReturnType<typeof vi.fn>;
     save: ReturnType<typeof vi.fn>;
+    createQueryBuilder: ReturnType<typeof vi.fn>;
+    delete: ReturnType<typeof vi.fn>;
+  };
+  let mockQueue: {
+    add: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(async () => {
@@ -58,6 +64,11 @@ describe('DlqEventsService', () => {
       findOne: vi.fn(),
       create: vi.fn(),
       save: vi.fn(),
+      createQueryBuilder: vi.fn(),
+      delete: vi.fn(),
+    };
+    mockQueue = {
+      add: vi.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -66,6 +77,10 @@ describe('DlqEventsService', () => {
         {
           provide: getRepositoryToken(DlqEvent),
           useValue: mockRepo,
+        },
+        {
+          provide: getQueueToken('retries'),
+          useValue: mockQueue,
         },
       ],
     }).compile();
@@ -175,6 +190,128 @@ describe('DlqEventsService', () => {
         }),
       );
       expect(mockRepo.save).toHaveBeenCalledWith(entity);
+    });
+  });
+
+  describe('listByEndpointId()', () => {
+    it('returns empty array when no DLQ events match endpoint', async () => {
+      mockRepo.find.mockResolvedValue([]);
+
+      const result = await service.listByEndpointId('ep-nonexistent');
+
+      expect(result).toEqual([]);
+      expect(mockRepo.find).toHaveBeenCalledWith({
+        where: { endpointId: { id: 'ep-nonexistent' } },
+        order: { createdAt: 'DESC' },
+      });
+    });
+
+    it('returns filtered DLQ events when endpointId is provided', async () => {
+      const entity = createMockEntity({ id: 'dlq-ep1', endpointId: { id: 'ep-01JHQ' } as never });
+      mockRepo.find.mockResolvedValue([entity]);
+
+      const result = await service.listByEndpointId('ep-01JHQ');
+
+      expect(result).toHaveLength(1);
+      expect(result[0]?.id).toBe('dlq-ep1');
+      expect(mockRepo.find).toHaveBeenCalledWith({
+        where: { endpointId: { id: 'ep-01JHQ' } },
+        order: { createdAt: 'DESC' },
+      });
+    });
+
+    it('returns all DLQ events when endpointId is not provided', async () => {
+      const entity1 = createMockEntity({ id: 'dlq-all-1' });
+      const entity2 = createMockEntity({ id: 'dlq-all-2' });
+      mockRepo.find.mockResolvedValue([entity1, entity2]);
+
+      const result = await service.listByEndpointId();
+
+      expect(result).toHaveLength(2);
+      expect(mockRepo.find).toHaveBeenCalledWith({ order: { createdAt: 'DESC' } });
+    });
+  });
+
+  describe('retry()', () => {
+    it('re-enqueues a DLQ event and marks retriedAt', async () => {
+      const entity = createMockEntity({ id: 'dlq-retry-1' });
+      mockRepo.findOne.mockResolvedValue(entity);
+      mockQueue.add.mockResolvedValue({ id: 'job-123' });
+      mockRepo.save.mockResolvedValue({ ...entity, retriedAt: new Date() });
+
+      const result = await service.retry('dlq-retry-1');
+
+      expect(result.jobId).toBe('job-123');
+      expect(mockRepo.findOne).toHaveBeenCalledWith({ where: { id: 'dlq-retry-1' } });
+      expect(mockQueue.add).toHaveBeenCalledWith('process-retry', {
+        event_id: '01JHQ-EVENT',
+        endpoint_id: 'ep-01JHQ',
+        attempt_number: 1,
+      });
+      expect(mockRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ retriedAt: expect.any(Date) }),
+      );
+    });
+
+    it('throws NotFoundException when DLQ event does not exist', async () => {
+      mockRepo.findOne.mockResolvedValue(null);
+
+      await expect(service.retry('nonexistent')).rejects.toThrow(NotFoundException);
+    });
+
+    it('throws ConflictException when DLQ event has already been retried', async () => {
+      const entity = createMockEntity({ retriedAt: new Date('2026-01-16T12:00:00Z') });
+      mockRepo.findOne.mockResolvedValue(entity);
+
+      await expect(service.retry('dlq-already-retried')).rejects.toThrow(ConflictException);
+    });
+  });
+
+  describe('retryAll()', () => {
+    it('re-enqueues all non-retried DLQ events for endpoint and returns count', async () => {
+      const entity1 = createMockEntity({ id: 'dlq-1' });
+      const entity2 = createMockEntity({ id: 'dlq-2' });
+      mockRepo.find.mockResolvedValue([entity1, entity2]);
+      mockQueue.add.mockResolvedValue({ id: 'job' });
+      mockRepo.save.mockResolvedValue(entity1);
+
+      const result = await service.retryAll('ep-01JHQ');
+
+      expect(result.count).toBe(2);
+      expect(mockQueue.add).toHaveBeenCalledTimes(2);
+    });
+
+    it('caps at 500 events per batch', async () => {
+      const entities = Array.from({ length: 600 }, (_, i) =>
+        createMockEntity({ id: `dlq-batch-${i}` }),
+      );
+      mockRepo.find.mockResolvedValue(entities);
+      mockQueue.add.mockResolvedValue({ id: 'job' });
+      mockRepo.save.mockResolvedValue(entities[0]);
+
+      const result = await service.retryAll('ep-01JHQ');
+
+      expect(result.count).toBe(500);
+      expect(mockQueue.add).toHaveBeenCalledTimes(500);
+    });
+
+    it('returns zero count when no events found', async () => {
+      mockRepo.find.mockResolvedValue([]);
+
+      const result = await service.retryAll('ep-empty');
+
+      expect(result.count).toBe(0);
+      expect(mockQueue.add).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('purgeByEndpointId()', () => {
+    it('deletes all DLQ events for the endpoint', async () => {
+      mockRepo.delete.mockResolvedValue({ affected: 5, raw: {} });
+
+      await service.purgeByEndpointId('ep-01JHQ');
+
+      expect(mockRepo.delete).toHaveBeenCalledWith({ endpointId: { id: 'ep-01JHQ' } });
     });
   });
 });
