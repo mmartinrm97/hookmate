@@ -8,13 +8,13 @@
 
 ## 1. The Fundamental Difference
 
-| Aspect | AWS CDK | Terraform |
-|--------|---------|-----------|
-| Language | TypeScript (or Python, Java, C#, Go) | HCL (HashiCorp Configuration Language) |
-| State management | CloudFormation (managed by AWS) | S3 + DynamoDB (self-managed) |
-| Execution model | `cdk synth` generates CloudFormation JSON → `cdk deploy` applies it | `terraform plan` previews → `terraform apply` executes |
-| Provider model | AWS-only (via CloudFormation) | Multi-cloud (AWS, Azure, GCP, etc.) |
-| Type safety | Full TypeScript type checking at compile time | Runtime validation via `terraform validate` |
+| Aspect           | AWS CDK                                                             | Terraform                                              |
+| ---------------- | ------------------------------------------------------------------- | ------------------------------------------------------ |
+| Language         | TypeScript (or Python, Java, C#, Go)                                | HCL (HashiCorp Configuration Language)                 |
+| State management | CloudFormation (managed by AWS)                                     | S3 + DynamoDB (self-managed)                           |
+| Execution model  | `cdk synth` generates CloudFormation JSON → `cdk deploy` applies it | `terraform plan` previews → `terraform apply` executes |
+| Provider model   | AWS-only (via CloudFormation)                                       | Multi-cloud (AWS, Azure, GCP, etc.)                    |
+| Type safety      | Full TypeScript type checking at compile time                       | Runtime validation via `terraform validate`            |
 
 ---
 
@@ -23,18 +23,21 @@
 ### 2.1 IAM Permissions (grant\* methods → explicit policies)
 
 **CDK (TypeScript):**
+
 ```typescript
 ingestionQueue.grantSendMessages(this.ingestionLambda);
 dbSecret.grantRead(this.ingestionLambda);
 ```
 
 CDK's `grant*` methods are high-level abstractions that:
+
 1. Create an IAM policy document with the correct actions
-2. Create a new IAM policy (or add to existing) 
+2. Create a new IAM policy (or add to existing)
 3. Attach the policy to the Lambda's execution role
 4. All behind a single method call
 
 **Terraform (HCL):**
+
 ```hcl
 data "aws_iam_policy_document" "ingestion_permissions" {
   statement {
@@ -60,12 +63,14 @@ resource "aws_iam_role_policy_attachment" "ingestion" {
 ### 2.2 Secret Rotation
 
 **CDK:** When you call `Credentials.fromGeneratedSecret('hookmate_admin')`, CDK automatically:
+
 - Creates an AWS Secrets Manager secret
 - Generates a random password
 - Enables automatic rotation every 30 days
 - All as a single line of configuration
 
 **Terraform:**
+
 ```hcl
 resource "random_password" "db_master" { ... }
 resource "aws_secretsmanager_secret" "db_credentials" { ... }
@@ -80,6 +85,7 @@ You must explicitly create the password, the secret, the version, AND the rotati
 ### 2.3 VPC and Subnet Configuration
 
 **CDK:**
+
 ```typescript
 new Vpc(this, 'HookMateVPC', {
   ipAddresses: IpAddresses.cidr('10.0.0.0/16'),
@@ -101,6 +107,7 @@ CDK's `Vpc` construct automatically creates subnets, route tables, IGW, NAT Gate
 ### 2.4 SQS Dead-Letter Queues
 
 **CDK:**
+
 ```typescript
 this.ingestionQueue = new Queue(this, 'HookMateIngestionQueue', {
   deadLetterQueue: {
@@ -111,6 +118,7 @@ this.ingestionQueue = new Queue(this, 'HookMateIngestionQueue', {
 ```
 
 **Terraform:**
+
 ```hcl
 resource "aws_sqs_queue" "ingestion" {
   redrive_policy = jsonencode({
@@ -129,14 +137,17 @@ resource "aws_sqs_queue" "ingestion" {
 ### 3.1 Cross-Stack References
 
 **CDK** handles cross-stack references automatically:
+
 ```typescript
 const computeStack = new ComputeStack(this, 'HookMateComputeStack', {
-  ingestionQueue: queueStack.ingestionQueue,  // CDK automatically creates export/import
+  ingestionQueue: queueStack.ingestionQueue, // CDK automatically creates export/import
 });
 ```
+
 CDK generates CloudFormation exports and imports (`Fn::ImportValue` / `Fn::GetAtt`) automatically when you pass constructs between stacks.
 
 **Terraform** requires explicit outputs and `data.terraform_remote_state` or directly referenced module outputs:
+
 ```hcl
 # In one module's outputs.tf
 output "ingestion_queue_arn" {
@@ -151,22 +162,24 @@ ingestion_queue_arn = module.queues.ingestion_queue_arn
 
 ### 3.2 State Management
 
-| Aspect | CDK | Terraform |
-|--------|-----|-----------|
-| State storage | CloudFormation in S3 (managed by CDK bootstrap) | S3 bucket (self-managed) |
-| State locking | Built into CloudFormation | DynamoDB table (must be created manually) |
-| State inspection | CloudFormation console, `cdk diff` | `terraform show`, `terraform state list` |
-| Drift detection | CloudFormation drift detection | `terraform plan` (compares state to real resources) |
-| Team collaboration | CloudFormation handles concurrency | DynamoDB locks prevent concurrent applies |
+| Aspect             | CDK                                             | Terraform                                           |
+| ------------------ | ----------------------------------------------- | --------------------------------------------------- |
+| State storage      | CloudFormation in S3 (managed by CDK bootstrap) | S3 bucket (self-managed)                            |
+| State locking      | Built into CloudFormation                       | DynamoDB table (must be created manually)           |
+| State inspection   | CloudFormation console, `cdk diff`              | `terraform show`, `terraform state list`            |
+| Drift detection    | CloudFormation drift detection                  | `terraform plan` (compares state to real resources) |
+| Team collaboration | CloudFormation handles concurrency              | DynamoDB locks prevent concurrent applies           |
 
 ### 3.3 Error Handling & Rollback
 
 **CDK / CloudFormation:**
+
 - If a resource fails during deployment, CloudFormation automatically rolls back
 - Stack events provide detailed failure information
 - `cdk diff` shows what changed before deployment
 
 **Terraform:**
+
 - If a resource fails, Terraform marks it as "tainted" and stops
 - Manual intervention may be required for partial failures
 - `terraform plan` always shows the diff first
@@ -177,12 +190,14 @@ ingestion_queue_arn = module.queues.ingestion_queue_arn
 ## 4. Which is Easier to Refactor?
 
 ### CDK wins for TypeScript teams because:
+
 - **Constructs:** Share VPC configurations, IAM patterns, and Lambda configs across stacks via TypeScript classes
 - **`aws-cdk-lib`:** Well-typed L2 constructs abstract away hundreds of lines of CloudFormation
 - **IDE support:** Full autocomplete, refactoring, and type checking for all infrastructure code
 - **Cross-stack references:** Passing constructs between stacks is type-safe and automatic
 
 ### Terraform wins for multi-cloud or non-TypeScript teams because:
+
 - **HCL is declarative:** Easier for ops teams who don't write TypeScript
 - **Multi-cloud:** Manage AWS + Cloudflare + Datadog in the same configuration
 - **No compilation step:** `terraform plan` runs directly on HCL
@@ -209,19 +224,20 @@ ingestion_queue_arn = module.queues.ingestion_queue_arn
 
 ## 6. Summary
 
-| Criterion | Winner | Why |
-|-----------|--------|-----|
-| Developer velocity | CDK | Constructs reduce boilerplate by 5-10x |
-| Auditability / transparency | Terraform | Explicit resources, plain-text policies |
-| Multi-cloud support | Terraform | Only option |
-| Type safety | CDK | Full TypeScript compile-time checking |
-| Learning curve | CDK (for devs) / Terraform (for ops) | Depends on background |
-| State management | CDK | CloudFormation handles this automatically |
-| Cross-stack refs | CDK | Automatic, type-safe |
-| Secret rotation | CDK | Built into RDS construct |
-| Refactoring at scale | CDK | Constructs + TypeScript make this easier |
+| Criterion                   | Winner                               | Why                                       |
+| --------------------------- | ------------------------------------ | ----------------------------------------- |
+| Developer velocity          | CDK                                  | Constructs reduce boilerplate by 5-10x    |
+| Auditability / transparency | Terraform                            | Explicit resources, plain-text policies   |
+| Multi-cloud support         | Terraform                            | Only option                               |
+| Type safety                 | CDK                                  | Full TypeScript compile-time checking     |
+| Learning curve              | CDK (for devs) / Terraform (for ops) | Depends on background                     |
+| State management            | CDK                                  | CloudFormation handles this automatically |
+| Cross-stack refs            | CDK                                  | Automatic, type-safe                      |
+| Secret rotation             | CDK                                  | Built into RDS construct                  |
+| Refactoring at scale        | CDK                                  | Constructs + TypeScript make this easier  |
 
 For **HookMate specifically**, CDK is the right choice because:
+
 - The team is TypeScript-first (NestJS API, React dashboard, shared types)
 - The infrastructure is AWS-only (no multi-cloud requirement)
 - Portfolio value: demonstrating modern IaC patterns with CDK

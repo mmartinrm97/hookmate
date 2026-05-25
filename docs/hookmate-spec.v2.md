@@ -35,6 +35,7 @@
 **One-line pitch:** "Webhook infrastructure that actually works — ingestion, retries, DLQ, routing, and AI summaries, all deployed on AWS via CDK."
 
 **Portfolio signals this project demonstrates:**
+
 - Production-grade event-driven system design (not a CRUD app)
 - AWS CDK fluency: SQS, SNS, EventBridge, Lambda, RDS, API Gateway, CloudWatch
 - Terraform parity: same infrastructure expressed in HCL
@@ -61,19 +62,22 @@ HookMate solves these with a single platform that treats webhook delivery as a f
 ## 3. Purpose & Goals
 
 ### Primary goal
+
 Build a system that a real team would actually run in production to manage their webhook infrastructure.
 
 ### Learning goals (portfolio-specific)
-| Goal | What you learn |
-|---|---|
-| AWS CDK — SQS, SNS, EventBridge | IaC for event-driven cloud architecture |
-| Terraform parity | Declarative infra in HCL; comparison with CDK |
-| BullMQ at scale | Queue semantics, backpressure, consumer groups, concurrency |
-| GitHub Actions + CDK deploy | Real CI/CD pipeline that deploys to AWS on push |
-| OpenTelemetry | Distributed tracing across async workers |
-| AI as a utility | Summaries and classification as a background job, not a chatbot |
+
+| Goal                            | What you learn                                                  |
+| ------------------------------- | --------------------------------------------------------------- |
+| AWS CDK — SQS, SNS, EventBridge | IaC for event-driven cloud architecture                         |
+| Terraform parity                | Declarative infra in HCL; comparison with CDK                   |
+| BullMQ at scale                 | Queue semantics, backpressure, consumer groups, concurrency     |
+| GitHub Actions + CDK deploy     | Real CI/CD pipeline that deploys to AWS on push                 |
+| OpenTelemetry                   | Distributed tracing across async workers                        |
+| AI as a utility                 | Summaries and classification as a background job, not a chatbot |
 
 ### Non-goals
+
 - This is not an iPaaS or full workflow automation platform (not Zapier)
 - No visual drag-and-drop workflow builder
 - No custom scripting runtime for event transformations
@@ -84,6 +88,7 @@ Build a system that a real team would actually run in production to manage their
 ## 4. Scope & Constraints
 
 ### In scope (v1)
+
 - Webhook endpoint ingestion (any HTTP POST)
 - Async processing pipeline with BullMQ
 - Configurable retry policy (exponential backoff, max attempts)
@@ -99,6 +104,7 @@ Build a system that a real team would actually run in production to manage their
 - React dashboard: event log, DLQ viewer, retry controls, AI summary panel
 
 ### Out of scope (v1)
+
 - Multi-tenancy / per-customer isolation
 - Custom event transformation scripts
 - Kafka or Kinesis transport (Redis Streams + SQS only)
@@ -106,6 +112,7 @@ Build a system that a real team would actually run in production to manage their
 - Event replay from historical archive
 
 ### Constraints
+
 - Single AWS region deployment (us-east-1)
 - PostgreSQL via RDS (not DynamoDB) — relational model for event log and routing rules
 - Redis via ElastiCache (not managed BullMQ service)
@@ -139,6 +146,7 @@ Build a system that a real team would actually run in production to manage their
 ### 5.2 Functional requirements
 
 #### Ingestion
+
 - FR-01: Accept HTTP POST to `/webhooks/{endpointId}` with any content type
 - FR-02: Validate that `endpointId` exists and is active before accepting the event
 - FR-03: Respond `202 Accepted` immediately (async processing); never block on processing
@@ -147,6 +155,7 @@ Build a system that a real team would actually run in production to manage their
 - FR-06: Verify optional HMAC-SHA256 signatures (`X-Hub-Signature-256` header)
 
 #### Processing
+
 - FR-07: Process events in FIFO order per endpoint (BullMQ ordered queue)
 - FR-08: Deliver events to the configured destination URL via HTTP POST
 - FR-09: On non-2xx response or timeout, mark the attempt as failed and schedule a retry
@@ -155,23 +164,27 @@ Build a system that a real team would actually run in production to manage their
 - FR-12: Store each delivery attempt with: timestamp, HTTP status, response body (truncated to 4KB), latency_ms
 
 #### Routing
+
 - FR-13: Support routing rules based on: source IP, `X-Event-Type` header, or JSON path on payload
 - FR-14: Rules evaluated in priority order; first match wins
 - FR-15: Unmatched events fall through to the default destination for that endpoint
 - FR-16: Rules can route to: HTTP endpoint, Slack webhook, Discord webhook, or discard
 
 #### DLQ
+
 - FR-17: DLQ events retain: original payload, all attempt records, final failure reason, endpoint config at time of failure
 - FR-18: Manual retry from DLQ re-enqueues the event with a fresh attempt counter
 - FR-19: DLQ purge deletes all events for an endpoint (requires confirmation)
 - FR-20: DLQ threshold alert: emit CloudWatch alarm when DLQ depth > configured threshold
 
 #### AI features
+
 - FR-21: Every 30 minutes, run a background job that generates a natural-language summary of events received in the last 24h per endpoint (OpenAI `gpt-4o-mini`)
 - FR-22: On event ingestion, classify the event into a category (e.g. `payment.completed`, `user.signup`, `error`) using a lightweight prompt; store as `event.category`
 - FR-23: AI features are non-blocking — if the OpenAI call fails, log the error and continue; do not fail event processing
 
 #### Dashboard
+
 - FR-24: Event log with filtering by endpoint, status, date range, category
 - FR-25: DLQ viewer with retry and purge controls
 - FR-26: AI summary panel per endpoint
@@ -180,16 +193,16 @@ Build a system that a real team would actually run in production to manage their
 
 ### 5.3 Non-functional requirements
 
-| Category | Requirement |
-|---|---|
-| Ingestion latency | P99 < 200ms for the `202 Accepted` response |
-| Processing throughput | Handle 500 events/sec sustained without queue backup |
-| Retry delivery | First retry within 5 seconds of failure |
-| DLQ write | Failed event persisted to DLQ within 500ms of final failure |
-| Dashboard load | Initial load < 2 seconds on a cold browser |
-| Availability | API endpoint: 99.9% uptime (Lambda + ALB) |
-| Durability | Zero event loss after `202 Accepted` (event persisted before ack) |
-| Observability | Every event has a trace ID linkable through ingestion → queue → delivery |
+| Category              | Requirement                                                              |
+| --------------------- | ------------------------------------------------------------------------ |
+| Ingestion latency     | P99 < 200ms for the `202 Accepted` response                              |
+| Processing throughput | Handle 500 events/sec sustained without queue backup                     |
+| Retry delivery        | First retry within 5 seconds of failure                                  |
+| DLQ write             | Failed event persisted to DLQ within 500ms of final failure              |
+| Dashboard load        | Initial load < 2 seconds on a cold browser                               |
+| Availability          | API endpoint: 99.9% uptime (Lambda + ALB)                                |
+| Durability            | Zero event loss after `202 Accepted` (event persisted before ack)        |
+| Observability         | Every event has a trace ID linkable through ingestion → queue → delivery |
 
 ---
 
@@ -237,6 +250,7 @@ React Dashboard (S3 + CloudFront)
 ### 6.2 Component breakdown
 
 #### Ingestion Lambda
+
 - **Runtime:** Node.js 20.x TypeScript
 - **Trigger:** API Gateway HTTP API POST `/webhooks/{endpointId}`
 - **Responsibilities:**
@@ -248,6 +262,7 @@ React Dashboard (S3 + CloudFront)
 - **Error handling:** If RDS write fails, return `500` and do not publish to SQS (maintain durability guarantee)
 
 #### Processor Lambda (BullMQ worker)
+
 - **Runtime:** Node.js 20.x TypeScript, triggered by SQS event source mapping
 - **Responsibilities:**
   - Deserialize job from SQS message
@@ -261,6 +276,7 @@ React Dashboard (S3 + CloudFront)
 - **Concurrency:** SQS event source mapping `batchSize: 10`, `concurrency: 5` per endpoint partition
 
 #### DLQ Lambda
+
 - **Trigger:** SQS DLQ queue
 - **Responsibilities:**
   - Write full DLQ record to `dlq_events` table
@@ -268,6 +284,7 @@ React Dashboard (S3 + CloudFront)
   - If threshold exceeded, publish alarm to SNS → Slack/Discord notification
 
 #### AI Background Lambda
+
 - **Trigger:** EventBridge Scheduler, every 30 minutes
 - **Responsibilities:**
   - For each active endpoint with events in last 24h, aggregate event stats
@@ -277,10 +294,12 @@ React Dashboard (S3 + CloudFront)
 - **Resilience:** Entire job wrapped in try/catch; failures logged to CloudWatch, never propagate
 
 #### NestJS API Lambda
+
 - **Runtime:** Node.js 20.x, NestJS compiled to a single Lambda handler via `@nestjs/platform-fastify` + `aws-serverless-express`
 - **Responsibilities:** All dashboard REST API endpoints (see Section 8)
 
 #### React Dashboard
+
 - **Build:** Vite + React + TypeScript + TailwindCSS + shadcn/ui
 - **Deploy:** S3 static hosting + CloudFront distribution
 - **State management:** TanStack Query for server state, Zustand for UI state
@@ -342,19 +361,19 @@ Redis (ElastiCache)
 
 ### 6.6 Technology decisions
 
-| Decision | Choice | Rationale |
-|---|---|---|
-| Queue transport | SQS + BullMQ/Redis | SQS for Lambda triggering and durability; BullMQ for retry semantics, scheduling, and per-job state |
-| Database | PostgreSQL (RDS) | Relational model fits events + attempts + rules; pgvector available for Phase 2 |
-| ORM | **Drizzle ORM + drizzle-kit** | SQL-first, no codegen step, instant TS inference, transparent migrations — TypeORM and Prisma not recommended for new projects in 2026 |
-| Validation | **Zod + nestjs-zod** | Single source of truth for runtime validation + TS types; replaces class-validator + decorators |
-| HTTP client | **native fetch + undici Pool** | Node 20 ships fetch natively (powered by undici); zero extra dep for basic calls; undici Pool for high-throughput delivery |
-| AI SDK | **Vercel AI SDK** | Provider-agnostic (OpenAI, Anthropic, Bedrock, Google); same code works regardless of client's LLM contract |
-| API framework | NestJS | Existing expertise; good Lambda adapter story |
-| Frontend | React + Vite + shadcn/ui | Existing expertise; fast build |
-| IaC | CDK (primary) + Terraform (mirror) | CDK for TypeScript fluency; Terraform to satisfy the job requirement |
-| Tracing | OpenTelemetry → X-Ray | No SaaS cost; X-Ray integrates with CDK alarms |
-| AI | Vercel AI SDK (provider-agnostic) + gpt-4o-mini via OpenAI provider | Provider-agnostic: same code works with OpenAI, Anthropic, Bedrock — critical for FDE work where clients use different LLM providers |
+| Decision        | Choice                                                              | Rationale                                                                                                                              |
+| --------------- | ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Queue transport | SQS + BullMQ/Redis                                                  | SQS for Lambda triggering and durability; BullMQ for retry semantics, scheduling, and per-job state                                    |
+| Database        | PostgreSQL (RDS)                                                    | Relational model fits events + attempts + rules; pgvector available for Phase 2                                                        |
+| ORM             | **Drizzle ORM + drizzle-kit**                                       | SQL-first, no codegen step, instant TS inference, transparent migrations — TypeORM and Prisma not recommended for new projects in 2026 |
+| Validation      | **Zod + nestjs-zod**                                                | Single source of truth for runtime validation + TS types; replaces class-validator + decorators                                        |
+| HTTP client     | **native fetch + undici Pool**                                      | Node 20 ships fetch natively (powered by undici); zero extra dep for basic calls; undici Pool for high-throughput delivery             |
+| AI SDK          | **Vercel AI SDK**                                                   | Provider-agnostic (OpenAI, Anthropic, Bedrock, Google); same code works regardless of client's LLM contract                            |
+| API framework   | NestJS                                                              | Existing expertise; good Lambda adapter story                                                                                          |
+| Frontend        | React + Vite + shadcn/ui                                            | Existing expertise; fast build                                                                                                         |
+| IaC             | CDK (primary) + Terraform (mirror)                                  | CDK for TypeScript fluency; Terraform to satisfy the job requirement                                                                   |
+| Tracing         | OpenTelemetry → X-Ray                                               | No SaaS cost; X-Ray integrates with CDK alarms                                                                                         |
+| AI              | Vercel AI SDK (provider-agnostic) + gpt-4o-mini via OpenAI provider | Provider-agnostic: same code works with OpenAI, Anthropic, Bedrock — critical for FDE work where clients use different LLM providers   |
 
 ---
 
@@ -456,10 +475,10 @@ CREATE TABLE ai_summaries (
 ```typescript
 // Ingestion queue message body
 interface IngestionMessage {
-  event_id: string;          // ULID
-  endpoint_id: string;       // ULID
-  payload_ref?: string;      // S3 key if payload > 256KB
-  received_at: string;       // ISO 8601
+  event_id: string; // ULID
+  endpoint_id: string; // ULID
+  payload_ref?: string; // S3 key if payload > 256KB
+  received_at: string; // ISO 8601
   trace_id: string;
 }
 
@@ -598,10 +617,10 @@ const db = new rds.DatabaseInstance(this, 'HookMateDB', {
   instanceType: ec2.InstanceType.of(ec2.InstanceClass.T3, ec2.InstanceSize.MICRO),
   vpc,
   vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
-  multiAz: false,                 // cost constraint for portfolio
+  multiAz: false, // cost constraint for portfolio
   allocatedStorage: 20,
   maxAllocatedStorage: 100,
-  deletionProtection: false,      // set true for production
+  deletionProtection: false, // set true for production
   databaseName: 'hookmate',
   credentials: rds.Credentials.fromGeneratedSecret('hookmate_admin'),
 });
@@ -627,7 +646,7 @@ const ingestionFn = new lambda.Function(this, 'IngestionFunction', {
     DB_SECRET_ARN: db.secret!.secretArn,
     QUEUE_URL: ingestionQueue.queueUrl,
   },
-  tracing: lambda.Tracing.ACTIVE,   // X-Ray
+  tracing: lambda.Tracing.ACTIVE, // X-Ray
 });
 
 // IAM least-privilege
@@ -723,16 +742,16 @@ sdk.start();
 
 ### 11.2 Required spans
 
-| Span name | Attributes |
-|---|---|
-| `hookmate.event.ingest` | `endpoint_id`, `event_id`, `payload_size_bytes` |
-| `hookmate.db.write` | `table`, `operation`, `row_id` |
-| `hookmate.queue.publish` | `queue_url`, `message_size_bytes` |
-| `hookmate.event.process` | `event_id`, `endpoint_id`, `attempt_number` |
+| Span name                   | Attributes                                                       |
+| --------------------------- | ---------------------------------------------------------------- |
+| `hookmate.event.ingest`     | `endpoint_id`, `event_id`, `payload_size_bytes`                  |
+| `hookmate.db.write`         | `table`, `operation`, `row_id`                                   |
+| `hookmate.queue.publish`    | `queue_url`, `message_size_bytes`                                |
+| `hookmate.event.process`    | `event_id`, `endpoint_id`, `attempt_number`                      |
 | `hookmate.delivery.attempt` | `destination_url`, `http_status`, `latency_ms`, `attempt_number` |
-| `hookmate.dlq.write` | `event_id`, `failure_reason`, `total_attempts` |
-| `hookmate.ai.summarize` | `endpoint_id`, `event_count`, `model`, `tokens_used` |
-| `hookmate.ai.classify` | `event_id`, `category`, `model` |
+| `hookmate.dlq.write`        | `event_id`, `failure_reason`, `total_attempts`                   |
+| `hookmate.ai.summarize`     | `endpoint_id`, `event_count`, `model`, `tokens_used`             |
+| `hookmate.ai.classify`      | `event_id`, `category`, `model`                                  |
 
 ### 11.3 CloudWatch dashboard (required)
 
@@ -747,13 +766,13 @@ The monitoring stack must deploy a CloudWatch dashboard named `HookMate-Operatio
 
 ### 11.4 Alarms (required)
 
-| Alarm | Threshold | Action |
-|---|---|---|
-| DLQ depth | > 100 | SNS → Slack |
-| Ingestion Lambda error rate | > 1% over 5min | SNS → Slack |
-| Processor Lambda error rate | > 5% over 5min | SNS → Slack |
-| RDS CPU | > 80% for 10min | SNS log only |
-| Redis memory | > 70% | SNS log only |
+| Alarm                       | Threshold       | Action       |
+| --------------------------- | --------------- | ------------ |
+| DLQ depth                   | > 100           | SNS → Slack  |
+| Ingestion Lambda error rate | > 1% over 5min  | SNS → Slack  |
+| Processor Lambda error rate | > 5% over 5min  | SNS → Slack  |
+| RDS CPU                     | > 80% for 10min | SNS log only |
+| Redis memory                | > 70%           | SNS log only |
 
 ---
 
@@ -762,18 +781,9 @@ The monitoring stack must deploy a CloudWatch dashboard named `HookMate-Operatio
 ### 12.1 HMAC verification
 
 ```typescript
-function verifySignature(
-  payload: Buffer,
-  signature: string,
-  secret: string
-): boolean {
-  const expected = `sha256=${
-    crypto.createHmac('sha256', secret).update(payload).digest('hex')
-  }`;
-  return crypto.timingSafeEqual(
-    Buffer.from(signature),
-    Buffer.from(expected)
-  );
+function verifySignature(payload: Buffer, signature: string, secret: string): boolean {
+  const expected = `sha256=${crypto.createHmac('sha256', secret).update(payload).digest('hex')}`;
+  return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
 }
 ```
 
@@ -785,13 +795,13 @@ function verifySignature(
 
 Each Lambda function has its own execution role with only the permissions it needs:
 
-| Function | Permissions |
-|---|---|
-| Ingestion | `sqs:SendMessage` (ingestion queue), `rds-data:*` (events table only), `secretsmanager:GetSecretValue` |
-| Processor | `sqs:ReceiveMessage`, `sqs:DeleteMessage` (ingestion queue), `rds-data:*`, `secretsmanager:GetSecretValue` |
-| DLQ Lambda | `sqs:ReceiveMessage`, `sqs:DeleteMessage` (DLQ), `rds-data:*`, `sns:Publish` (alarm topic) |
-| AI Lambda | `rds-data:*`, `secretsmanager:GetSecretValue` (OpenAI key) |
-| API Lambda | `rds-data:*`, `secretsmanager:GetSecretValue` |
+| Function   | Permissions                                                                                                |
+| ---------- | ---------------------------------------------------------------------------------------------------------- |
+| Ingestion  | `sqs:SendMessage` (ingestion queue), `rds-data:*` (events table only), `secretsmanager:GetSecretValue`     |
+| Processor  | `sqs:ReceiveMessage`, `sqs:DeleteMessage` (ingestion queue), `rds-data:*`, `secretsmanager:GetSecretValue` |
+| DLQ Lambda | `sqs:ReceiveMessage`, `sqs:DeleteMessage` (DLQ), `rds-data:*`, `sns:Publish` (alarm topic)                 |
+| AI Lambda  | `rds-data:*`, `secretsmanager:GetSecretValue` (OpenAI key)                                                 |
+| API Lambda | `rds-data:*`, `secretsmanager:GetSecretValue`                                                              |
 
 ### 12.3 API key authentication
 
@@ -829,10 +839,10 @@ services:
   floci:
     image: hectorvent/floci:latest
     ports:
-      - "4566:4566"
+      - '4566:4566'
     environment:
-      - FLOCI_HOSTNAME=floci          # so SQS QueueUrls resolve correctly inside compose
-      - FLOCI_STORAGE_MODE=memory     # reset state between test runs
+      - FLOCI_HOSTNAME=floci # so SQS QueueUrls resolve correctly inside compose
+      - FLOCI_STORAGE_MODE=memory # reset state between test runs
     volumes:
       - ./data:/app/data
 
@@ -843,29 +853,33 @@ services:
       POSTGRES_USER: hookmate
       POSTGRES_PASSWORD: hookmate
     ports:
-      - "5432:5432"
+      - '5432:5432'
 
   redis:
     image: redis:7-alpine
     ports:
-      - "6379:6379"
+      - '6379:6379'
 ```
 
 Point the AWS SDK at Floci in your test environment:
 
 ```typescript
 // test/aws-clients.ts
-import { SQSClient } from "@aws-sdk/client-sqs";
-import { SNSClient } from "@aws-sdk/client-sns";
-import { SecretsManagerClient } from "@aws-sdk/client-secrets-manager";
+import { SQSClient } from '@aws-sdk/client-sqs';
+import { SNSClient } from '@aws-sdk/client-sns';
+import { SecretsManagerClient } from '@aws-sdk/client-secrets-manager';
 
-const flociEndpoint = process.env.AWS_ENDPOINT_URL ?? "http://localhost:4566";
-const flociCreds = { accessKeyId: "test", secretAccessKey: "test" };
-const region = "us-east-1";
+const flociEndpoint = process.env.AWS_ENDPOINT_URL ?? 'http://localhost:4566';
+const flociCreds = { accessKeyId: 'test', secretAccessKey: 'test' };
+const region = 'us-east-1';
 
 export const sqs = new SQSClient({ endpoint: flociEndpoint, region, credentials: flociCreds });
 export const sns = new SNSClient({ endpoint: flociEndpoint, region, credentials: flociCreds });
-export const secretsManager = new SecretsManagerClient({ endpoint: flociEndpoint, region, credentials: flociCreds });
+export const secretsManager = new SecretsManagerClient({
+  endpoint: flociEndpoint,
+  region,
+  credentials: flociCreds,
+});
 ```
 
 In GitHub Actions, start Floci as a service container before the test step (see Section 13.5).
@@ -881,16 +895,16 @@ In GitHub Actions, start Floci as a service container before the test step (see 
 
 #### Key Floci facts to know
 
-| Property | Value |
-|---|---|
-| Port | `4566` (same as LocalStack) |
-| Auth | None — any `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` works |
-| Lambda runtime | Real Docker containers (Node.js 20.x supported) |
-| ElastiCache | Real Redis via Docker |
-| RDS | Real PostgreSQL via Docker |
-| SQS, SNS, EventBridge, Secrets Manager | In-process emulation |
-| State between runs | Use `FLOCI_STORAGE_MODE=memory` to reset on restart |
-| Multi-container hostname | Set `FLOCI_HOSTNAME=floci` so returned SQS URLs resolve inside Compose |
+| Property                               | Value                                                                  |
+| -------------------------------------- | ---------------------------------------------------------------------- |
+| Port                                   | `4566` (same as LocalStack)                                            |
+| Auth                                   | None — any `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` works         |
+| Lambda runtime                         | Real Docker containers (Node.js 20.x supported)                        |
+| ElastiCache                            | Real Redis via Docker                                                  |
+| RDS                                    | Real PostgreSQL via Docker                                             |
+| SQS, SNS, EventBridge, Secrets Manager | In-process emulation                                                   |
+| State between runs                     | Use `FLOCI_STORAGE_MODE=memory` to reset on restart                    |
+| Multi-container hostname               | Set `FLOCI_HOSTNAME=floci` so returned SQS URLs resolve inside Compose |
 
 ### 13.3 E2E tests (Playwright)
 
@@ -908,7 +922,7 @@ export default function () {
   http.post(
     `https://api.hookmate.dev/webhooks/${ENDPOINT_ID}`,
     JSON.stringify({ event: 'test', timestamp: Date.now() }),
-    { headers: { 'Content-Type': 'application/json' } }
+    { headers: { 'Content-Type': 'application/json' } },
   );
 }
 // Assert: P99 < 200ms, 0 errors
@@ -931,14 +945,14 @@ jobs:
       floci:
         image: hectorvent/floci:latest
         ports:
-          - "4566:4566"
+          - '4566:4566'
         env:
           FLOCI_HOSTNAME: localhost
           FLOCI_STORAGE_MODE: memory
       postgres:
         image: postgres:16-alpine
         ports:
-          - "5432:5432"
+          - '5432:5432'
         env:
           POSTGRES_DB: hookmate_test
           POSTGRES_USER: hookmate
@@ -951,7 +965,7 @@ jobs:
       redis:
         image: redis:7-alpine
         ports:
-          - "6379:6379"
+          - '6379:6379'
     env:
       AWS_ENDPOINT_URL: http://localhost:4566
       AWS_DEFAULT_REGION: us-east-1
@@ -966,7 +980,7 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run test:unit
-      - run: npm run test:integration  # Floci (free LocalStack replacement)
+      - run: npm run test:integration # Floci (free LocalStack replacement)
 
   cdk-synth:
     needs: lint-and-test
@@ -1278,6 +1292,6 @@ The project is "done" (ready for portfolio audit) when:
 
 ---
 
-*Document version: 1.0 — May 2026*  
-*Next project in roadmap: terminalize (Phase 1 — building in parallel)*  
-*Audit: share your repository URL when complete for spec-compliance review*
+_Document version: 1.0 — May 2026_  
+_Next project in roadmap: terminalize (Phase 1 — building in parallel)_  
+_Audit: share your repository URL when complete for spec-compliance review_
