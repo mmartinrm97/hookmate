@@ -113,7 +113,9 @@ describe('AiSummariesConsumer', () => {
       );
       expect(mockAiSummariesService.upsert).toHaveBeenCalledTimes(2);
       expect(mockAiProcessor.classifyEvents).toHaveBeenCalledTimes(1);
-      expect(mockAiProcessor.classifyEvents).toHaveBeenCalledWith([makeEvent('evt-1', null)]);
+      expect(mockAiProcessor.classifyEvents).toHaveBeenCalledWith([
+        { eventId: 'evt-1', payload: { amount: 100 }, receivedAt: '2026-01-15T12:00:00Z' },
+      ]);
       expect(mockEventsService.batchUpdateCategories).toHaveBeenCalledTimes(1);
     });
 

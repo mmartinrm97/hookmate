@@ -4,6 +4,7 @@ import { generateText } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import type { HookMateEndpoint } from '@hookmate/shared';
 import type {
+  ClassificationInput,
   ClassificationResponseItem,
   SummaryPromptInput,
   SummaryResponse,
@@ -18,12 +19,6 @@ const CLASSIFICATION_SYSTEM_PROMPT =
   'Classify each webhook event into a `domain.action` category. ' +
   'Return ONLY a JSON array: `[{ eventId, category }]`. ' +
   'Inspect the payload to determine the category.';
-
-interface ClassificationInput {
-  eventId: string;
-  payload: Record<string, unknown>;
-  receivedAt: string;
-}
 
 @Injectable()
 export class AiProcessorService {
@@ -70,7 +65,6 @@ export class AiProcessorService {
         system: SUMMARY_SYSTEM_PROMPT,
         prompt: userPrompt,
         temperature: 0.3,
-        maxTokens: 2000,
       });
 
       return this.parseSummaryResponse(text);
@@ -107,7 +101,6 @@ export class AiProcessorService {
         system: CLASSIFICATION_SYSTEM_PROMPT,
         prompt: JSON.stringify(events),
         temperature: 0.3,
-        maxTokens: 1000,
       });
 
       return this.parseClassificationResponse(text);
@@ -161,12 +154,17 @@ export class AiProcessorService {
         return null;
       }
 
-      return parsed.filter(
-        (item): item is ClassificationResponseItem =>
-          typeof item.eventId === 'string' &&
-          typeof item.category === 'string' &&
-          item.category.length > 0,
-      );
+      return parsed
+        .filter(
+          (item): item is Record<string, unknown> =>
+            typeof item.eventId === 'string' &&
+            typeof item.category === 'string' &&
+            item.category.length > 0,
+        )
+        .map((item) => ({
+          eventId: item.eventId as string,
+          category: item.category as string,
+        }));
     } catch {
       this.logger.warn('Failed to parse AI classification response as JSON');
       return null;

@@ -37,3 +37,12 @@ export interface ClassificationResponseItem {
   eventId: string;
   category: string;
 }
+
+/**
+ * Input passed to the AI classification prompt.
+ */
+export interface ClassificationInput {
+  eventId: string;
+  payload: Record<string, unknown>;
+  receivedAt: string;
+}

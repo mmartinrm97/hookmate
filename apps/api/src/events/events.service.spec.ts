@@ -50,6 +50,7 @@ describe('EventsService', () => {
     save: ReturnType<typeof vi.fn>;
     update: ReturnType<typeof vi.fn>;
     createQueryBuilder: Mock;
+    manager: unknown;
   };
 
   beforeEach(async () => {
@@ -74,6 +75,7 @@ describe('EventsService', () => {
       save: vi.fn(),
       update: vi.fn(),
       createQueryBuilder: vi.fn().mockReturnValue(mockQueryBuilder),
+      manager: undefined,
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -470,7 +472,7 @@ describe('EventsService', () => {
 
       await service.batchUpdateCategories(updates);
 
-      expect(mockRepo.manager.transaction).toHaveBeenCalled();
+      expect((mockRepo.manager as Record<string, unknown>).transaction).toHaveBeenCalled();
     });
   });
 });

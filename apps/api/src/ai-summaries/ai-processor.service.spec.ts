@@ -20,6 +20,14 @@ function makeEvents(count: number) {
   }));
 }
 
+function makeClassificationInput(count: number) {
+  return Array.from({ length: count }, (_, i) => ({
+    eventId: `evt-${i}`,
+    payload: { amount: 100, currency: 'USD' },
+    receivedAt: `2026-01-15T${String(10 + i).padStart(2, '0')}:00:00Z`,
+  }));
+}
+
 describe('AiProcessorService', () => {
   let service: AiProcessorService;
   let mockConfig: { get: ReturnType<typeof vi.fn> };
@@ -209,11 +217,11 @@ describe('AiProcessorService', () => {
         experimental_output: undefined,
       } as never);
 
-      const events = makeEvents(3).filter((e) => e.category === null);
+      const events = makeClassificationInput(3);
       const result = await service.classifyEvents(events);
 
       expect(result).toHaveLength(3);
-      expect(result[0]).toEqual({ eventId: 'evt-0', category: 'payment.charge' });
+      expect(result?.[0]).toEqual({ eventId: 'evt-0', category: 'payment.charge' });
     });
 
     it('returns null when AI provider errors', async () => {
@@ -284,7 +292,7 @@ describe('AiProcessorService', () => {
       ]);
 
       expect(result).toHaveLength(1);
-      expect(result[0]).toEqual({ eventId: 'evt-0', category: 'payment.charge' });
+      expect(result?.[0]).toEqual({ eventId: 'evt-0', category: 'payment.charge' });
     });
 
     it('returns null when empty events array is passed', async () => {

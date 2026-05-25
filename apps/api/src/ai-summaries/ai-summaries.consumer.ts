@@ -117,7 +117,13 @@ export class AiSummariesConsumer {
         return;
       }
 
-      const classifications = await this.aiProcessor.classifyEvents(uncategorized);
+      const input = uncategorized.map((e) => ({
+        eventId: e.id,
+        payload: e.payload,
+        receivedAt: e.receivedAt,
+      }));
+
+      const classifications = await this.aiProcessor.classifyEvents(input);
 
       if (!classifications || classifications.length === 0) {
         return;
