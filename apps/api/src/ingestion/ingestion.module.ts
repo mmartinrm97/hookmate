@@ -7,8 +7,7 @@ import { IngestionService } from './ingestion.service';
 
 @Module({
   imports: [EndpointsModule, EventsModule, SqsModule],
-  controllers: [IngestionController],
-  providers: [IngestionService],
+  providers: [IngestionService, IngestionController],
   exports: [IngestionService],
 })
 export class IngestionModule {}
