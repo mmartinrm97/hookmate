@@ -19,7 +19,8 @@
     "test:unit": "vitest run",
     "test:watch": "vitest",
     "test:cov": "vitest run --coverage",
-    "test:e2e": "vitest run --config ./test/vitest-e2e.config.ts"
+    "test:e2e": "vitest run --config ./test/vitest-e2e.config.ts",
+    "seed": "ts-node scripts/seed.ts"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.65",
