@@ -9,6 +9,7 @@ import { DlqEvent } from '../dlq-events/entities/dlq-event.entity';
 import { Event } from '../events/entities/event.entity';
 import { MetricsController } from './metrics.controller';
 import { MetricsService } from './metrics.service';
+import { MetricsSseHandler } from './sse/metrics-sse.handler';
 
 @Module({
   imports: [
@@ -19,7 +20,7 @@ import { MetricsService } from './metrics.service';
     DeliveryAttemptsModule,
   ],
   controllers: [MetricsController],
-  providers: [MetricsService],
+  providers: [MetricsService, MetricsSseHandler],
   exports: [MetricsService],
 })
 export class MetricsModule {}

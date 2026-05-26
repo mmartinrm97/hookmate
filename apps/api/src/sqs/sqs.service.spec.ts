@@ -8,6 +8,7 @@ const mockQueueUrl = 'https://sqs.us-east-1.amazonaws.com/123456789012/ingestion
 const mockSendMessageInputs = vi.hoisted(() => [] as Array<Record<string, unknown>>);
 const mockReceiveMessageInputs = vi.hoisted(() => [] as Array<Record<string, unknown>>);
 const mockDeleteMessageInputs = vi.hoisted(() => [] as Array<Record<string, unknown>>);
+const mockGetQueueAttributesInputs = vi.hoisted(() => [] as Array<Record<string, unknown>>);
 
 vi.mock('@aws-sdk/client-sqs', () => ({
   SQSClient: vi.fn(() => ({ send: mockSend })),
@@ -24,6 +25,11 @@ vi.mock('@aws-sdk/client-sqs', () => ({
   DeleteMessageCommand: class MockDeleteMessageCommand {
     constructor(input: Record<string, unknown>) {
       mockDeleteMessageInputs.push(input);
+    }
+  },
+  GetQueueAttributesCommand: class MockGetQueueAttributesCommand {
+    constructor(input: Record<string, unknown>) {
+      mockGetQueueAttributesInputs.push(input);
     }
   },
 }));
@@ -206,6 +212,52 @@ describe('SqsService', () => {
 
       await expect(service.deleteMessage('receipt-handle-456')).resolves.toBeUndefined();
 
+      expect(loggerErrorSpy).toHaveBeenCalledTimes(1);
+      loggerErrorSpy.mockRestore();
+    });
+  });
+
+  describe('getQueueDepth()', () => {
+    it('returns visible, invisible, and delayed message counts', async () => {
+      mockSend.mockResolvedValue({
+        Attributes: {
+          ApproximateNumberOfMessages: '42',
+          ApproximateNumberOfMessagesNotVisible: '5',
+          ApproximateNumberOfMessagesDelayed: '3',
+        },
+      });
+
+      const result = await service.getQueueDepth();
+
+      expect(result).toEqual({ visible: 42, invisible: 5, delayed: 3 });
+      expect(mockGetQueueAttributesInputs).toHaveLength(1);
+
+      const commandInput = mockGetQueueAttributesInputs[0] as {
+        QueueUrl: string;
+        AttributeNames: string[];
+      };
+
+      expect(commandInput.QueueUrl).toBe(mockQueueUrl);
+      expect(commandInput.AttributeNames).toContain('ApproximateNumberOfMessages');
+      expect(commandInput.AttributeNames).toContain('ApproximateNumberOfMessagesNotVisible');
+      expect(commandInput.AttributeNames).toContain('ApproximateNumberOfMessagesDelayed');
+    });
+
+    it('returns zeros when attributes are missing', async () => {
+      mockSend.mockResolvedValue({ Attributes: {} });
+
+      const result = await service.getQueueDepth();
+
+      expect(result).toEqual({ visible: 0, invisible: 0, delayed: 0 });
+    });
+
+    it('returns zeros and logs error when SQS fails', async () => {
+      const loggerErrorSpy = vi.spyOn(Logger.prototype, 'error').mockImplementation(() => {});
+      mockSend.mockRejectedValue(new Error('SQS unavailable'));
+
+      const result = await service.getQueueDepth();
+
+      expect(result).toEqual({ visible: 0, invisible: 0, delayed: 0 });
       expect(loggerErrorSpy).toHaveBeenCalledTimes(1);
       loggerErrorSpy.mockRestore();
     });
