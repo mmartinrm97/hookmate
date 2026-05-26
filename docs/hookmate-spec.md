@@ -1159,7 +1159,7 @@ Each criterion is independently verifiable. The audit will check these explicitl
 - [x] DB write: insert into `events` with status `received`
 - [x] SQS publish: structured `IngestionMessage` payload
 - [x] Return 202 with `event_id` and `trace_id`
-- [ ] OpenTelemetry: `hookmate.event.ingest` span with required attributes
+- [x] OpenTelemetry: `hookmate.event.ingest` span with required attributes
 - [x] Unit tests: valid event, invalid endpoint, bad HMAC, DB failure
 - [ ] Integration test: full roundtrip with Floci (SQS + Lambda + Secrets Manager all emulated at localhost:4566)
 
@@ -1171,7 +1171,7 @@ Each criterion is independently verifiable. The audit will check these explicitl
 - [x] Delivery attempt recording in `delivery_attempts`
 - [x] BullMQ retry scheduling with exponential backoff
 - [x] DLQ promotion after max retries
-- [ ] OpenTelemetry: `hookmate.event.process`, `hookmate.delivery.attempt` spans
+- [x] OpenTelemetry: `hookmate.event.process`, `hookmate.delivery.attempt` spans
 - [x] Unit tests: routing rule logic, backoff calculation, DLQ promotion
 - [ ] Integration test: full flow with a test HTTP server (failing + succeeding)
 
