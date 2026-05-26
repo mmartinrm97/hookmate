@@ -1,6 +1,6 @@
 import { App } from 'aws-cdk-lib';
-import { HookMateAppStack } from '../lib/hookmate-app-stack';
-import { HookMateBootstrapStack } from '../lib/hookmate-bootstrap-stack';
+import { HookMateAppStack } from '../lib/hookmate-app-stack.js';
+import { HookMateBootstrapStack } from '../lib/hookmate-bootstrap-stack.js';
 
 const app = new App();
 
