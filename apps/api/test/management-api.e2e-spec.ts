@@ -1,9 +1,9 @@
+import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { Test, type TestingModule } from '@nestjs/testing';
 import request from 'supertest';
-import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { DataSource } from 'typeorm';
 import { AppModule } from '../src/app.module';
-import { configureApp } from '../src/configure-app.js';
+import { configureApp } from '../src/configure-app';
 
 process.env['POSTGRES_USER'] = process.env['POSTGRES_USER'] ?? 'hookmate';
 process.env['POSTGRES_PASSWORD'] = process.env['POSTGRES_PASSWORD'] ?? 'hookmate';

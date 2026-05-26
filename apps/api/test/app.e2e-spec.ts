@@ -3,7 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { DataSource } from 'typeorm';
 import { AppModule } from './../src/app.module';
-import { configureApp } from './../src/configure-app.js';
+import { configureApp } from './../src/configure-app';
 
 // Provide safe defaults so the module config does not throw.
 // Postgres must be running (via docker-compose) for e2e tests.

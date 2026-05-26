@@ -23,6 +23,8 @@ export interface ListEventsFilters {
   to?: string;
   page?: number;
   limit?: number;
+  sortBy?: string;
+  sortDirection?: 'asc' | 'desc';
 }
 
 @Injectable()
@@ -62,7 +64,17 @@ export class EventsService {
       });
     }
 
-    qb.orderBy('event.receivedAt', 'DESC')
+    const sortField =
+      filters.sortBy === 'status'
+        ? 'event.status'
+        : filters.sortBy === 'category'
+          ? 'event.category'
+          : filters.sortBy === 'endpointId'
+            ? 'event.endpointId'
+            : 'event.receivedAt';
+    const sortOrder = filters.sortDirection === 'asc' ? 'ASC' : 'DESC';
+
+    qb.orderBy(sortField, sortOrder)
       .skip((page - 1) * limit)
       .take(limit);
 
