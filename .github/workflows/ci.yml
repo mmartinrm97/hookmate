@@ -306,3 +306,28 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Build dashboard
+        run: pnpm --filter @hookmate/dashboard build
+        env:
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL || 'https://api.hookmate.dev' }}
+
+      - name: Deploy dashboard to S3
+        run: |
+          aws s3 sync apps/dashboard/dist s3://${{ vars.DASHBOARD_BUCKET }} --delete --cache-control "public,max-age=31536000,immutable"
+          # HTML files should not be cached aggressively
+          aws s3 cp apps/dashboard/dist/index.html s3://${{ vars.DASHBOARD_BUCKET }}/index.html --cache-control "public,max-age=0,must-revalidate"
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: us-east-1
+
+      - name: Invalidate CloudFront cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ vars.CLOUDFRONT_DISTRIBUTION_ID }} \
+            --paths "/*"
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: us-east-1

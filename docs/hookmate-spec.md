@@ -1241,8 +1241,8 @@ Each criterion is independently verifiable. The audit will check these explicitl
 - [x] Page: DLQ viewer — list, retry button, purge button with confirmation modal
 - [x] Component: AI summary panel — latest summary text + top categories
 - [x] Component: System metrics panel — queue depth, error rate, latency charts (Recharts)
-- [ ] WebSocket connection for live queue depth
-- [ ] Deploy to S3/CloudFront via GitHub Actions
+- [x] WebSocket connection for live queue depth
+- [x] Deploy to S3/CloudFront via GitHub Actions
 
 ### Phase J: GitHub Actions
 
