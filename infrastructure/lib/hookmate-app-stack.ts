@@ -3,14 +3,14 @@ import { IpAddresses, SubnetType, Vpc, type IVpc } from 'aws-cdk-lib/aws-ec2';
 import { Secret } from 'aws-cdk-lib/aws-secretsmanager';
 import { Construct } from 'constructs';
 
-import { DatabaseStack } from './database-stack.js';
-import { CacheStack } from './cache-stack.js';
-import { QueueStack } from './queue-stack.js';
-import { ComputeStack } from './compute-stack.js';
-import { ApiStack } from './api-stack.js';
-import { SchedulerStack } from './scheduler-stack.js';
-import { MonitoringStack } from './monitoring-stack.js';
-import { FrontendStack } from './frontend-stack.js';
+import { ApiStack } from './api-stack';
+import { CacheStack } from './cache-stack';
+import { ComputeStack } from './compute-stack';
+import { DatabaseStack } from './database-stack';
+import { FrontendStack } from './frontend-stack';
+import { MonitoringStack } from './monitoring-stack';
+import { QueueStack } from './queue-stack';
+import { SchedulerStack } from './scheduler-stack';
 
 /**
  * HookMateAppStack — Top-level orchestrator.
