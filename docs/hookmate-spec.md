@@ -1234,13 +1234,13 @@ Each criterion is independently verifiable. The audit will check these explicitl
 
 ### Phase I: React dashboard
 
-- [ ] Vite + React + TypeScript + TailwindCSS + shadcn/ui scaffold
-- [ ] TanStack Query setup with API client
-- [ ] Page: Endpoints list + create form
-- [ ] Page: Endpoint detail — event log table, filtering, pagination
-- [ ] Page: DLQ viewer — list, retry button, purge button with confirmation modal
-- [ ] Component: AI summary panel — latest summary text + top categories
-- [ ] Component: System metrics panel — queue depth, error rate, latency charts (Recharts)
+- [x] Vite + React + TypeScript + TailwindCSS + shadcn/ui scaffold
+- [x] TanStack Query setup with API client
+- [x] Page: Endpoints list + create form
+- [x] Page: Endpoint detail — event log table, filtering, pagination
+- [x] Page: DLQ viewer — list, retry button, purge button with confirmation modal
+- [x] Component: AI summary panel — latest summary text + top categories
+- [x] Component: System metrics panel — queue depth, error rate, latency charts (Recharts)
 - [ ] WebSocket connection for live queue depth
 - [ ] Deploy to S3/CloudFront via GitHub Actions
 
