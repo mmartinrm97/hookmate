@@ -1161,7 +1161,7 @@ Each criterion is independently verifiable. The audit will check these explicitl
 - [x] Return 202 with `event_id` and `trace_id`
 - [x] OpenTelemetry: `hookmate.event.ingest` span with required attributes
 - [x] Unit tests: valid event, invalid endpoint, bad HMAC, DB failure
-- [ ] Integration test: full roundtrip with Floci (SQS + Lambda + Secrets Manager all emulated at localhost:4566)
+- [x] Integration test: full roundtrip with Floci (SQS + Lambda + Secrets Manager all emulated at localhost:4566)
 
 ### Phase C: Processor Lambda + BullMQ
 
@@ -1173,7 +1173,7 @@ Each criterion is independently verifiable. The audit will check these explicitl
 - [x] DLQ promotion after max retries
 - [x] OpenTelemetry: `hookmate.event.process`, `hookmate.delivery.attempt` spans
 - [x] Unit tests: routing rule logic, backoff calculation, DLQ promotion
-- [ ] Integration test: full flow with a test HTTP server (failing + succeeding)
+- [x] Integration test: full flow with a test HTTP server (failing + succeeding)
 
 ### Phase D: DLQ Lambda
 
