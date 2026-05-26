@@ -1150,7 +1150,7 @@ Each criterion is independently verifiable. The audit will check these explicitl
 - [x] `dlq_events` table
 - [x] `routing_rules` table
 - [x] `ai_summaries` table
-- [ ] Seed script: creates 1 test endpoint + 20 test events in various statuses
+- [x] Seed script: creates 1 test endpoint + 20 test events in various statuses
 
 ### Phase B: Ingestion Lambda
 
@@ -1254,11 +1254,11 @@ Each criterion is independently verifiable. The audit will check these explicitl
 
 ### Phase K: Documentation
 
-- [ ] `README.md`: architecture overview, local dev setup, deploy instructions, environment variables
-- [ ] `terraform/COMPARISON.md`: CDK vs Terraform analysis
-- [ ] `docs/architecture.md`: data flow diagrams, component responsibilities
-- [ ] `docs/runbook.md`: how to handle DLQ alerts, how to drain queues, how to roll back a deploy
-- [ ] Swagger docs accessible at `/api/docs` in dev
+- [x] `README.md`: architecture overview, local dev setup, deploy instructions, environment variables
+- [x] `terraform/COMPARISON.md`: CDK vs Terraform analysis
+- [x] `docs/architecture.md`: data flow diagrams, component responsibilities
+- [x] `docs/runbook.md`: how to handle DLQ alerts, how to drain queues, how to roll back a deploy
+- [x] Swagger docs accessible at `/api/docs` in dev
 
 ---
 
