@@ -1179,9 +1179,9 @@ Each criterion is independently verifiable. The audit will check these explicitl
 
 - [x] Triggered by SQS DLQ queue — DlqPromoterService (in-process)
 - [x] Write `dlq_events` row with full context snapshot
-- [ ] Check depth against endpoint threshold
-- [ ] Publish SNS notification if threshold exceeded
-- [ ] Unit tests: threshold logic, SNS publish
+- [x] Check depth against endpoint threshold
+- [x] Publish SNS notification if threshold exceeded
+- [x] Unit tests: threshold logic, SNS publish
 
 ### Phase E: NestJS management API
 
@@ -1246,11 +1246,11 @@ Each criterion is independently verifiable. The audit will check these explicitl
 
 ### Phase J: GitHub Actions
 
-- [ ] Workflow: lint → unit tests → integration tests (Floci service container) → CDK synth → CDK deploy (main only)
-- [ ] Secrets configured: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `OPENAI_API_KEY`
-- [ ] Branch protection: PR requires passing CI before merge
-- [ ] Deploy step only runs on `main` push
-- [ ] CDK diff step on PRs (comment diff output on PR)
+- [x] Workflow: lint → unit tests → integration tests (Floci service container) → CDK synth → CDK deploy (main only)
+- [x] Secrets configured: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `OPENAI_API_KEY`
+- [x] Branch protection: PR requires passing CI before merge
+- [x] Deploy step only runs on `main` push
+- [x] CDK diff step on PRs (comment diff output on PR)
 
 ### Phase K: Documentation
 
