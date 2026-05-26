@@ -3,6 +3,7 @@ import { getQueueToken } from '@nestjs/bull';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DeliveryAttemptsService } from '../../delivery-attempts/delivery-attempts.service';
+import { DlqAlertService } from '../../dlq-events/dlq-alert.service';
 import { DlqEventsService } from '../../dlq-events/dlq-events.service';
 import { EndpointsService } from '../../endpoints/endpoints.service';
 import { EventsService } from '../../events/events.service';
@@ -107,6 +108,7 @@ describe('Processor Integration Tests', () => {
         { provide: DeliveryService, useValue: mockDeliveryService },
         { provide: getQueueToken('retries'), useValue: mockQueue },
         { provide: DlqEventsService, useValue: mockDlqEventsService },
+        { provide: DlqAlertService, useValue: { publishThresholdAlert: vi.fn() } },
         { provide: SqsService, useValue: mockSqsService },
         { provide: ConfigService, useValue: mockConfigService },
       ],

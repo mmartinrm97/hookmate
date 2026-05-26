@@ -134,6 +134,12 @@ export class DlqEventsService {
     return { count: toRetry.length };
   }
 
+  async countByEndpointId(endpointId: string): Promise<number> {
+    return this.repo.count({
+      where: { endpointId: { id: endpointId } },
+    });
+  }
+
   async purgeByEndpointId(endpointId: string): Promise<void> {
     await this.repo.delete({ endpointId: { id: endpointId } });
   }

@@ -4,8 +4,10 @@ import type {
   HookMateEvent,
   HookMateDlqEvent,
 } from '@hookmate/shared';
+import { Logger } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { DlqAlertService } from '../dlq-events/dlq-alert.service';
 import { DlqEventsService } from '../dlq-events/dlq-events.service';
 import { EventsService } from '../events/events.service';
 import { DlqPromoterService } from './dlq-promoter.service';
@@ -63,17 +65,25 @@ describe('DlqPromoterService', () => {
   let service: DlqPromoterService;
   let mockDlqEventsService: {
     create: ReturnType<typeof vi.fn>;
+    countByEndpointId: ReturnType<typeof vi.fn>;
   };
   let mockEventsService: {
     updateStatus: ReturnType<typeof vi.fn>;
+  };
+  let mockDlqAlertService: {
+    publishThresholdAlert: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(async () => {
     mockDlqEventsService = {
       create: vi.fn(),
+      countByEndpointId: vi.fn(),
     };
     mockEventsService = {
       updateStatus: vi.fn(),
+    };
+    mockDlqAlertService = {
+      publishThresholdAlert: vi.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -81,6 +91,7 @@ describe('DlqPromoterService', () => {
         DlqPromoterService,
         { provide: DlqEventsService, useValue: mockDlqEventsService },
         { provide: EventsService, useValue: mockEventsService },
+        { provide: DlqAlertService, useValue: mockDlqAlertService },
       ],
     }).compile();
 
@@ -236,6 +247,122 @@ describe('DlqPromoterService', () => {
       await service.promote(event, endpoint, attempts, 'Max retries exhausted');
 
       expect(mockEventsService.updateStatus).toHaveBeenCalledWith(event.id, 'dead_lettered');
+    });
+  });
+
+  describe('threshold alert integration', () => {
+    it('checks DLQ depth after promoting an event', async () => {
+      const event = createMockEvent();
+      const endpoint = createMockEndpoint({ id: 'ep-threshold', dlqThreshold: 100 });
+      const attempts = [createMockAttempt()];
+      mockDlqEventsService.create.mockResolvedValue({} as HookMateDlqEvent);
+      mockEventsService.updateStatus.mockResolvedValue({} as HookMateEvent);
+      mockDlqEventsService.countByEndpointId.mockResolvedValue(50);
+
+      await service.promote(event, endpoint, attempts, 'Max retries exhausted');
+
+      expect(mockDlqEventsService.countByEndpointId).toHaveBeenCalledWith('ep-threshold');
+    });
+
+    it('publishes threshold alert when depth exceeds threshold', async () => {
+      const event = createMockEvent();
+      const endpoint = createMockEndpoint({ id: 'ep-over', dlqThreshold: 10 });
+      const attempts = [createMockAttempt()];
+      mockDlqEventsService.create.mockResolvedValue({} as HookMateDlqEvent);
+      mockEventsService.updateStatus.mockResolvedValue({} as HookMateEvent);
+      mockDlqEventsService.countByEndpointId.mockResolvedValue(15);
+
+      await service.promote(event, endpoint, attempts, 'Max retries exhausted');
+
+      expect(mockDlqAlertService.publishThresholdAlert).toHaveBeenCalledWith('ep-over', 15, 10);
+    });
+
+    it('does NOT publish alert when depth equals threshold', async () => {
+      const event = createMockEvent();
+      const endpoint = createMockEndpoint({ id: 'ep-equal', dlqThreshold: 10 });
+      const attempts = [createMockAttempt()];
+      mockDlqEventsService.create.mockResolvedValue({} as HookMateDlqEvent);
+      mockEventsService.updateStatus.mockResolvedValue({} as HookMateEvent);
+      mockDlqEventsService.countByEndpointId.mockResolvedValue(10);
+
+      await service.promote(event, endpoint, attempts, 'Max retries exhausted');
+
+      expect(mockDlqAlertService.publishThresholdAlert).not.toHaveBeenCalled();
+    });
+
+    it('does NOT publish alert when depth is below threshold', async () => {
+      const event = createMockEvent();
+      const endpoint = createMockEndpoint({ id: 'ep-below', dlqThreshold: 100 });
+      const attempts = [createMockAttempt()];
+      mockDlqEventsService.create.mockResolvedValue({} as HookMateDlqEvent);
+      mockEventsService.updateStatus.mockResolvedValue({} as HookMateEvent);
+      mockDlqEventsService.countByEndpointId.mockResolvedValue(5);
+
+      await service.promote(event, endpoint, attempts, 'Max retries exhausted');
+
+      expect(mockDlqAlertService.publishThresholdAlert).not.toHaveBeenCalled();
+    });
+
+    it('does not throw when countByEndpointId fails', async () => {
+      const event = createMockEvent();
+      const endpoint = createMockEndpoint({ dlqThreshold: 100 });
+      const attempts = [createMockAttempt()];
+      mockDlqEventsService.create.mockResolvedValue({} as HookMateDlqEvent);
+      mockEventsService.updateStatus.mockResolvedValue({} as HookMateEvent);
+      mockDlqEventsService.countByEndpointId.mockRejectedValue(new Error('DB timeout'));
+
+      await expect(
+        service.promote(event, endpoint, attempts, 'Max retries exhausted'),
+      ).resolves.not.toThrow();
+    });
+
+    it('does not throw when publishThresholdAlert fails', async () => {
+      const event = createMockEvent();
+      const endpoint = createMockEndpoint({ id: 'ep-fail-alert', dlqThreshold: 10 });
+      const attempts = [createMockAttempt()];
+      mockDlqEventsService.create.mockResolvedValue({} as HookMateDlqEvent);
+      mockEventsService.updateStatus.mockResolvedValue({} as HookMateEvent);
+      mockDlqEventsService.countByEndpointId.mockResolvedValue(20);
+      mockDlqAlertService.publishThresholdAlert.mockRejectedValue(new Error('SNS error'));
+
+      await expect(
+        service.promote(event, endpoint, attempts, 'Max retries exhausted'),
+      ).resolves.not.toThrow();
+    });
+
+    it('uses default threshold of 100 when endpoint does not specify one', async () => {
+      const event = createMockEvent();
+      const endpoint = createMockEndpoint({ id: 'ep-default', dlqThreshold: 100 });
+      const attempts = [createMockAttempt()];
+      mockDlqEventsService.create.mockResolvedValue({} as HookMateDlqEvent);
+      mockEventsService.updateStatus.mockResolvedValue({} as HookMateEvent);
+      mockDlqEventsService.countByEndpointId.mockResolvedValue(150);
+
+      await service.promote(event, endpoint, attempts, 'Max retries exhausted');
+
+      expect(mockDlqAlertService.publishThresholdAlert).toHaveBeenCalledWith(
+        'ep-default',
+        150,
+        100,
+      );
+    });
+
+    it('logs error and continues when DLQ depth check fails', async () => {
+      const loggerErrorSpy = vi.spyOn(Logger.prototype, 'error').mockImplementation(() => {});
+      const event = createMockEvent();
+      const endpoint = createMockEndpoint({ dlqThreshold: 100 });
+      const attempts = [createMockAttempt()];
+      mockDlqEventsService.create.mockResolvedValue({} as HookMateDlqEvent);
+      mockEventsService.updateStatus.mockResolvedValue({} as HookMateEvent);
+      mockDlqEventsService.countByEndpointId.mockRejectedValue(new Error('DB connection lost'));
+
+      await service.promote(event, endpoint, attempts, 'Max retries exhausted');
+
+      expect(loggerErrorSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Failed to check DLQ threshold'),
+        expect.any(String),
+      );
+      loggerErrorSpy.mockRestore();
     });
   });
 });
