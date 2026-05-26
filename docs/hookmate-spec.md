@@ -1197,39 +1197,39 @@ Each criterion is independently verifiable. The audit will check these explicitl
 
 ### Phase F: AI Background Lambda
 
-- [ ] EventBridge Scheduler trigger (every 30min)
-- [ ] Query events per endpoint for last 24h
-- [ ] OpenAI call: summary generation (gpt-4o-mini)
-- [ ] OpenAI call: batch classification
-- [ ] Upsert `ai_summaries`, update `events.category`
-- [ ] Error handling: failure in AI call does not abort the entire job
-- [ ] Unit test: prompt construction, result parsing
+- [x] EventBridge Scheduler trigger (every 30min) — BullMQ repeatable job `*/30 * * * *`
+- [x] Query events per endpoint for last 24h
+- [x] OpenAI call: summary generation (gpt-4o-mini)
+- [x] OpenAI call: batch classification
+- [x] Upsert `ai_summaries`, update `events.category`
+- [x] Error handling: failure in AI call does not abort the entire job
+- [x] Unit test: prompt construction, result parsing
 
 ### Phase G: CDK infrastructure
 
-- [ ] `DatabaseStack`: RDS, VPC, security groups, secret
-- [ ] `CacheStack`: ElastiCache Redis, security group
-- [ ] `QueueStack`: ingestion SQS queue + DLQ, correct visibility timeout and retention
-- [ ] `ComputeStack`: all 4 Lambda functions with correct IAM roles (least-privilege)
-- [ ] `ApiStack`: HTTP API Gateway + routes + CORS
-- [ ] `SchedulerStack`: EventBridge Scheduler for AI Lambda
-- [ ] `MonitoringStack`: CloudWatch dashboard + 5 alarms + SNS topic
-- [ ] `FrontendStack`: S3 bucket + CloudFront distribution + OAI
-- [ ] `cdk synth` produces clean output
+- [x] `DatabaseStack`: RDS, VPC, security groups, secret
+- [x] `CacheStack`: ElastiCache Redis, security group
+- [x] `QueueStack`: ingestion SQS queue + DLQ, correct visibility timeout and retention
+- [x] `ComputeStack`: all 4 Lambda functions with correct IAM roles (least-privilege)
+- [x] `ApiStack`: HTTP API Gateway + routes + CORS
+- [x] `SchedulerStack`: EventBridge Scheduler for AI Lambda
+- [x] `MonitoringStack`: CloudWatch dashboard + 5 alarms + SNS topic
+- [x] `FrontendStack`: S3 bucket + CloudFront distribution + OAI
+- [x] `cdk synth` produces clean output
 - [ ] `cdk diff` shows no unexpected drift after deploy
 
 ### Phase H: Terraform mirror
 
-- [ ] Provider config: AWS, region variable
-- [ ] S3 backend + DynamoDB lock table configured
-- [ ] `modules/database`: matches RDS CDK stack
-- [ ] `modules/cache`: matches ElastiCache CDK stack
-- [ ] `modules/queues`: matches SQS CDK stack
-- [ ] `modules/lambdas`: all 4 functions with IAM roles
-- [ ] `modules/api_gateway`: HTTP API
-- [ ] `modules/monitoring`: alarms + SNS
-- [ ] `modules/frontend`: S3 + CloudFront
-- [ ] `terraform/COMPARISON.md` written
+- [x] Provider config: AWS, region variable
+- [x] S3 backend + DynamoDB lock table configured
+- [x] `modules/database`: matches RDS CDK stack
+- [x] `modules/cache`: matches ElastiCache CDK stack
+- [x] `modules/queues`: matches SQS CDK stack
+- [x] `modules/lambdas`: all 4 functions with IAM roles
+- [x] `modules/api_gateway`: HTTP API
+- [x] `modules/monitoring`: alarms + SNS
+- [x] `modules/frontend`: S3 + CloudFront
+- [x] `terraform/COMPARISON.md` written
 - [ ] `terraform plan` produces clean output
 
 ### Phase I: React dashboard
