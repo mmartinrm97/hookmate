@@ -45,6 +45,7 @@
     "overrides": {
       "@fastify/static": "^9.1.1",
       "uuid": ">=11.1.1"
-    }
+    },
+    "onlyBuiltDependencies": ["protobufjs"]
   }
 }

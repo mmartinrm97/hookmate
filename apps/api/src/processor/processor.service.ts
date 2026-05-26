@@ -5,6 +5,7 @@ import { DeliveryAttemptsService } from '../delivery-attempts/delivery-attempts.
 import { EndpointsService } from '../endpoints/endpoints.service';
 import { EventsService } from '../events/events.service';
 import { RoutingRulesService } from '../routing-rules/routing-rules.service';
+import { getTracer, OtelAttributes } from '../telemetry/telemetry';
 import { DeliveryService } from './delivery.service';
 import { DlqPromoterService } from './dlq-promoter.service';
 import { RoutingEvaluatorService } from './routing-evaluator.service';
@@ -33,120 +34,138 @@ export class ProcessorService {
    * load event + endpoint → evaluate routing → deliver → record attempt → retry/DLQ
    */
   async process(input: ProcessInput): Promise<ProcessResult> {
+    const tracer = getTracer();
     const { event_id, endpoint_id, attempt_number } = input;
 
-    const event = await this.loadEvent(event_id);
-    if (!event) {
-      return {
-        status: 'skipped',
-        eventId: event_id,
-        endpointId: endpoint_id,
-        attemptNumber: attempt_number,
-      };
-    }
+    return tracer.startActiveSpan('hookmate.event.process', async (span) => {
+      span.setAttribute(OtelAttributes.EVENT_ID, event_id);
+      span.setAttribute(OtelAttributes.ENDPOINT_ID, endpoint_id);
+      span.setAttribute(OtelAttributes.ATTEMPT_NUMBER, attempt_number);
 
-    const endpoint = await this.loadEndpoint(endpoint_id);
-    if (!endpoint) {
-      return {
-        status: 'skipped',
-        eventId: event_id,
-        endpointId: endpoint_id,
-        attemptNumber: attempt_number,
-      };
-    }
+      try {
+        const event = await this.loadEvent(event_id);
+        if (!event) {
+          return {
+            status: 'skipped',
+            eventId: event_id,
+            endpointId: endpoint_id,
+            attemptNumber: attempt_number,
+          };
+        }
 
-    // Skip paused endpoints
-    if (endpoint.status === 'paused') {
-      this.logger.log(`Endpoint ${endpoint_id} is paused — skipping event ${event_id}`);
-      return {
-        status: 'skipped',
-        eventId: event_id,
-        endpointId: endpoint_id,
-        attemptNumber: attempt_number,
-      };
-    }
+        const endpoint = await this.loadEndpoint(endpoint_id);
+        if (!endpoint) {
+          return {
+            status: 'skipped',
+            eventId: event_id,
+            endpointId: endpoint_id,
+            attemptNumber: attempt_number,
+          };
+        }
 
-    // Evaluate routing rules
-    const rules = await this.routingRulesService.getByEndpointId(endpoint_id);
-    const destinationUrl = this.routingEvaluatorService.evaluate(
-      {
-        payload: event.payload,
-        headers: event.headers,
-        sourceIp: event.sourceIp,
-      },
-      rules,
-      endpoint.destinationUrl,
-    );
+        // Skip paused endpoints
+        if (endpoint.status === 'paused') {
+          this.logger.log(`Endpoint ${endpoint_id} is paused — skipping event ${event_id}`);
+          return {
+            status: 'skipped',
+            eventId: event_id,
+            endpointId: endpoint_id,
+            attemptNumber: attempt_number,
+          };
+        }
 
-    // Deliver payload
-    const deliveryResult = await this.deliveryService.deliver(
-      destinationUrl,
-      event.payload,
-      event_id,
-    );
+        // Evaluate routing rules
+        const rules = await this.routingRulesService.getByEndpointId(endpoint_id);
+        const destinationUrl = this.routingEvaluatorService.evaluate(
+          {
+            payload: event.payload,
+            headers: event.headers,
+            sourceIp: event.sourceIp,
+          },
+          rules,
+          endpoint.destinationUrl,
+        );
 
-    // Record delivery attempt
-    await this.deliveryAttemptsService.create({
-      eventId: event_id,
-      attemptNumber: attempt_number,
-      destinationUrl,
-      httpStatus: deliveryResult.httpStatus,
-      responseBody: deliveryResult.responseBody,
-      latencyMs: deliveryResult.latencyMs,
-      status: deliveryResult.status,
-    });
-
-    // Handle result
-    if (deliveryResult.status === 'success') {
-      await this.eventsService.updateStatus(event_id, 'delivered');
-      return {
-        status: 'delivered',
-        eventId: event_id,
-        endpointId: endpoint_id,
-        attemptNumber: attempt_number,
-        destinationUrl,
-      };
-    }
-
-    // Delivery failed — decide retry or DLQ
-    if (attempt_number < endpoint.maxRetries) {
-      await this.eventsService.updateStatus(event_id, 'failed');
-
-      // Schedule retry with exponential backoff
-      const delay = Math.min(
-        endpoint.retryBaseDelayMs * Math.pow(2, attempt_number),
-        MAX_BACKOFF_MS,
-      );
-      await this.retryQueue.add(
-        'process-retry',
-        {
+        // Deliver payload
+        const deliveryResult = await this.deliveryService.deliver(
+          destinationUrl,
+          event.payload,
           event_id,
-          endpoint_id,
-          attempt_number: attempt_number + 1,
-        },
-        { delay },
-      );
+        );
 
-      return {
-        status: 'failed_retry',
-        eventId: event_id,
-        endpointId: endpoint_id,
-        attemptNumber: attempt_number,
-        destinationUrl,
-      };
-    }
+        // Record delivery attempt
+        await this.deliveryAttemptsService.create({
+          eventId: event_id,
+          attemptNumber: attempt_number,
+          destinationUrl,
+          httpStatus: deliveryResult.httpStatus,
+          responseBody: deliveryResult.responseBody,
+          latencyMs: deliveryResult.latencyMs,
+          status: deliveryResult.status,
+        });
 
-    // Max retries exhausted — promote to DLQ
-    const failureReason = this.buildFailureReason(deliveryResult);
-    await this.dlqPromoterService.promote(event, endpoint, [], failureReason);
+        // Handle result
+        if (deliveryResult.status === 'success') {
+          await this.eventsService.updateStatus(event_id, 'delivered');
+          span.setAttribute(OtelAttributes.EVENT_STATUS, 'delivered');
+          return {
+            status: 'delivered',
+            eventId: event_id,
+            endpointId: endpoint_id,
+            attemptNumber: attempt_number,
+            destinationUrl,
+          };
+        }
 
-    return {
-      status: 'dead_lettered',
-      eventId: event_id,
-      endpointId: endpoint_id,
-      attemptNumber: attempt_number,
-      destinationUrl,
-    };
+        // Delivery failed — decide retry or DLQ
+        if (attempt_number < endpoint.maxRetries) {
+          await this.eventsService.updateStatus(event_id, 'failed');
+
+          // Schedule retry with exponential backoff
+          const delay = Math.min(
+            endpoint.retryBaseDelayMs * Math.pow(2, attempt_number),
+            MAX_BACKOFF_MS,
+          );
+          await this.retryQueue.add(
+            'process-retry',
+            {
+              event_id,
+              endpoint_id,
+              attempt_number: attempt_number + 1,
+            },
+            { delay },
+          );
+
+          span.setAttribute(OtelAttributes.EVENT_STATUS, 'failed_retry');
+          return {
+            status: 'failed_retry',
+            eventId: event_id,
+            endpointId: endpoint_id,
+            attemptNumber: attempt_number,
+            destinationUrl,
+          };
+        }
+
+        // Max retries exhausted — promote to DLQ
+        const failureReason = this.buildFailureReason(deliveryResult);
+        await this.dlqPromoterService.promote(event, endpoint, [], failureReason);
+
+        span.setAttribute(OtelAttributes.EVENT_STATUS, 'dead_lettered');
+        return {
+          status: 'dead_lettered',
+          eventId: event_id,
+          endpointId: endpoint_id,
+          attemptNumber: attempt_number,
+          destinationUrl,
+        };
+      } catch (error) {
+        span.recordException(error as Error);
+        span.setAttribute(OtelAttributes.EVENT_STATUS, 'error');
+        throw error;
+      } finally {
+        span.end();
+      }
+    });
   }
 
   private async loadEvent(
