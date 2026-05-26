@@ -1,13 +1,13 @@
 import { type JSX, useState } from 'react';
-import type { EndpointWithStats, CreateEndpointFormData } from '../../types/api.js';
-import { Button } from '../ui/button.js';
-import { Input } from '../ui/input.js';
-import { Label } from '../ui/label.js';
-import { Badge } from '../ui/badge.js';
-import { Icons } from '../ui/icons.js';
-import { formatRelativeTime, formatNumber } from '../../lib/utils.js';
-import { endpointsApi } from '../../lib/api.js';
-import { useToast } from '../../stores/toast-store.js';
+import { endpointsApi } from '../../lib/api';
+import { formatNumber, formatRelativeTime } from '../../lib/utils';
+import { useToast } from '../../stores/toast-store';
+import type { CreateEndpointFormData, EndpointWithStats } from '../../types/api';
+import { Badge } from '../ui/badge';
+import { Button } from '../ui/button';
+import { Icons } from '../ui/icons';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
 
 interface EndpointsTableProps {
   endpoints: EndpointWithStats[];

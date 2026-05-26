@@ -1,1 +1,1 @@
-export { DlqTable } from './DlqTable.js';
+export { DlqTable } from './DlqTable';

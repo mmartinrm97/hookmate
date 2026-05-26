@@ -1,2 +1,2 @@
-export { MetricsCards } from './MetricsCards.js';
-export { QueueDepthChart, StatusPieChart, DeliveryLatencyChart, ErrorRateChart } from './Charts.js';
+export { DeliveryLatencyChart, ErrorRateChart, QueueDepthChart, StatusPieChart } from './Charts';
+export { MetricsCards } from './MetricsCards';

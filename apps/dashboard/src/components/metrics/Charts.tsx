@@ -1,16 +1,16 @@
 import { type JSX } from 'react';
 import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
   CartesianGrid,
+  Line,
+  LineChart,
   Tooltip as RechartsTooltip,
   ResponsiveContainer,
+  XAxis,
+  YAxis,
 } from 'recharts';
-import type { TimeSeriesPoint } from '../../types/api.js';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card.js';
-import { Skeleton } from '../ui/skeleton.js';
+import type { TimeSeriesPoint } from '../../types/api';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Skeleton } from '../ui/skeleton';
 
 interface QueueDepthChartProps {
   data: TimeSeriesPoint[] | undefined;

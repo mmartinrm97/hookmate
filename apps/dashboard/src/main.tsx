@@ -1,8 +1,8 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { initDarkMode } from './stores/ui-store.js';
+import App from './App';
 import './index.css';
-import App from './App.js';
+import { initDarkMode } from './stores/ui-store';
 
 // Apply dark mode before first render to avoid flash
 initDarkMode({

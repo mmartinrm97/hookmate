@@ -1,3 +1,3 @@
-export { AppShell } from './AppShell.js';
-export { Sidebar } from './Sidebar.js';
-export { TopBar } from './TopBar.js';
+export { AppShell } from './AppShell';
+export { Sidebar } from './Sidebar';
+export { TopBar } from './TopBar';

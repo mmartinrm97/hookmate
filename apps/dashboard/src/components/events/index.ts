@@ -1,1 +1,1 @@
-export { EventFilters, EventsTable, EventDetailDrawer, EventStatusBadge } from './EventsTable.js';
+export { EventDetailDrawer, EventFilters, EventsTable, EventStatusBadge } from './EventsTable';

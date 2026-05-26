@@ -1,9 +1,9 @@
 import { type JSX } from 'react';
-import type { MetricsSnapshot } from '../../types/api.js';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card.js';
-import { Skeleton } from '../ui/skeleton.js';
-import { formatNumber, formatLatency, formatPercent } from '../../lib/utils.js';
-import { cn } from '../../lib/cn.js';
+import { cn } from '../../lib/cn';
+import { formatLatency, formatNumber, formatPercent } from '../../lib/utils';
+import type { MetricsSnapshot } from '../../types/api';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Skeleton } from '../ui/skeleton';
 
 interface MetricsCardsProps {
   snapshot: MetricsSnapshot | undefined;

@@ -1,9 +1,9 @@
-import { type JSX, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import type { HookMateEvent } from '@hookmate/shared';
-import { eventsApi, endpointsApi } from '../lib/api.js';
-import { EventFilters, EventsTable, EventDetailDrawer } from '../components/events/index.js';
-import type { EventsFilterState, EventSortState } from '../types/api.js';
+import { useQuery } from '@tanstack/react-query';
+import { type JSX, useState } from 'react';
+import { EventDetailDrawer, EventFilters, EventsTable } from '../components/events/index';
+import { endpointsApi, eventsApi } from '../lib/api';
+import type { EventsFilterState, EventSortState } from '../types/api';
 
 const defaultFilters: EventsFilterState = {
   page: 1,

@@ -1,14 +1,14 @@
-import { type JSX, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { metricsApi } from '../lib/api.js';
+import { type JSX, useState } from 'react';
 import {
+  DeliveryLatencyChart,
+  ErrorRateChart,
   MetricsCards,
   QueueDepthChart,
   StatusPieChart,
-  DeliveryLatencyChart,
-  ErrorRateChart,
-} from '../components/metrics/index.js';
-import { Select, SelectItem } from '../components/ui/select.js';
+} from '../components/metrics/index';
+import { Select, SelectItem } from '../components/ui/select';
+import { metricsApi } from '../lib/api';
 
 export function MetricsPage(): JSX.Element {
   const [timeRange, setTimeRange] = useState('24');

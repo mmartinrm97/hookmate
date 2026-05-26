@@ -1,8 +1,8 @@
 import { type JSX } from 'react';
 import { NavLink } from 'react-router-dom';
-import { useUiStore } from '../../stores/ui-store.js';
-import { Icons } from '../ui/icons.js';
-import { cn } from '../../lib/cn.js';
+import { cn } from '../../lib/cn';
+import { useUiStore } from '../../stores/ui-store';
+import { Icons } from '../ui/icons';
 
 const navItems = [
   { to: '/endpoints', label: 'Endpoints', icon: Icons.Box },

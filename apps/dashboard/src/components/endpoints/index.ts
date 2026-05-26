@@ -1,1 +1,1 @@
-export { EndpointsTable, CreateEndpointDialog } from './EndpointsTable.js';
+export { CreateEndpointDialog, EndpointsTable } from './EndpointsTable';
