@@ -1,6 +1,6 @@
 services:
   floci:
-    image: floci/floci:latest
+    image: floci/floci:1.5.19
     container_name: hookmate-floci
     ports:
       - '${FLOCI_PORT:-4566}:4566'

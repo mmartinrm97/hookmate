@@ -69,79 +69,65 @@ describe.skipIf(!isDbAvailable)('Management API (integration)', () => {
     });
   });
 
-  describe('Full lifecycle: endpoint → event → metrics', () => {
-    let endpointId: string;
+  it('full lifecycle: create → list → events → metrics → delete', async () => {
+    const createRes = await request(app.getHttpServer())
+      .post('/api/v1/endpoints')
+      .set('Authorization', `Bearer ${apiKey}`)
+      .send({
+        name: 'Integration test endpoint',
+        destinationUrl: 'https://example.com/webhook',
+      })
+      .expect(201);
 
-    it('creates an endpoint', async () => {
-      const res = await request(app.getHttpServer())
-        .post('/api/v1/endpoints')
-        .set('Authorization', `Bearer ${apiKey}`)
-        .send({
-          name: 'Integration test endpoint',
-          destinationUrl: 'https://example.com/webhook',
-        })
-        .expect(201);
+    const endpointId: string = createRes.body.id;
+    expect(createRes.body.status).toBe('active');
 
-      endpointId = res.body.id;
-      expect(res.body.status).toBe('active');
-    });
+    const listRes = await request(app.getHttpServer())
+      .get('/api/v1/endpoints')
+      .set('Authorization', `Bearer ${apiKey}`)
+      .expect(200);
 
-    it('lists the created endpoint', async () => {
-      const res = await request(app.getHttpServer())
-        .get('/api/v1/endpoints')
-        .set('Authorization', `Bearer ${apiKey}`)
-        .expect(200);
+    expect(Array.isArray(listRes.body)).toBe(true);
+    expect(listRes.body.length).toBeGreaterThanOrEqual(1);
 
-      expect(Array.isArray(res.body)).toBe(true);
-      expect(res.body.length).toBeGreaterThanOrEqual(1);
-    });
+    const eventsRes = await request(app.getHttpServer())
+      .get(`/api/v1/events?endpointId=${endpointId}`)
+      .set('Authorization', `Bearer ${apiKey}`)
+      .expect(200);
 
-    it('returns empty events list for the endpoint', async () => {
-      const res = await request(app.getHttpServer())
-        .get(`/api/v1/events?endpointId=${endpointId}`)
-        .set('Authorization', `Bearer ${apiKey}`)
-        .expect(200);
+    expect(eventsRes.body.items).toEqual([]);
+    expect(eventsRes.body.total).toBe(0);
 
-      expect(res.body.items).toEqual([]);
-      expect(res.body.total).toBe(0);
-    });
+    const systemMetricsRes = await request(app.getHttpServer())
+      .get('/api/v1/metrics/system')
+      .set('Authorization', `Bearer ${apiKey}`)
+      .expect(200);
 
-    it('returns system metrics', async () => {
-      const res = await request(app.getHttpServer())
-        .get('/api/v1/metrics/system')
-        .set('Authorization', `Bearer ${apiKey}`)
-        .expect(200);
+    expect(systemMetricsRes.body).toHaveProperty('totalEvents');
+    expect(systemMetricsRes.body).toHaveProperty('byStatus');
+    expect(systemMetricsRes.body).toHaveProperty('dlqDepth');
+    expect(systemMetricsRes.body).toHaveProperty('errorRate');
 
-      expect(res.body).toHaveProperty('totalEvents');
-      expect(res.body).toHaveProperty('byStatus');
-      expect(res.body).toHaveProperty('dlqDepth');
-      expect(res.body).toHaveProperty('errorRate');
-    });
+    const endpointMetricsRes = await request(app.getHttpServer())
+      .get(`/api/v1/metrics/endpoint/${endpointId}`)
+      .set('Authorization', `Bearer ${apiKey}`)
+      .expect(200);
 
-    it('returns endpoint metrics (delivery data)', async () => {
-      const res = await request(app.getHttpServer())
-        .get(`/api/v1/metrics/endpoint/${endpointId}`)
-        .set('Authorization', `Bearer ${apiKey}`)
-        .expect(200);
+    expect(endpointMetricsRes.body.endpointId).toBe(endpointId);
+    expect(endpointMetricsRes.body.period).toBe('24h');
 
-      expect(res.body.endpointId).toBe(endpointId);
-      expect(res.body.period).toBe('24h');
-    });
+    await request(app.getHttpServer())
+      .delete(`/api/v1/endpoints/${endpointId}`)
+      .set('Authorization', `Bearer ${apiKey}`)
+      .expect(204);
 
-    it('soft-deletes the endpoint and excludes it from list', async () => {
-      await request(app.getHttpServer())
-        .delete(`/api/v1/endpoints/${endpointId}`)
-        .set('Authorization', `Bearer ${apiKey}`)
-        .expect(204);
+    const afterDeleteRes = await request(app.getHttpServer())
+      .get('/api/v1/endpoints')
+      .set('Authorization', `Bearer ${apiKey}`)
+      .expect(200);
 
-      const listRes = await request(app.getHttpServer())
-        .get('/api/v1/endpoints')
-        .set('Authorization', `Bearer ${apiKey}`)
-        .expect(200);
-
-      const ids = (listRes.body as Array<{ id: string }>).map((e: { id: string }) => e.id);
-      expect(ids).not.toContain(endpointId);
-    });
+    const ids = (afterDeleteRes.body as Array<{ id: string }>).map((e: { id: string }) => e.id);
+    expect(ids).not.toContain(endpointId);
   });
 
   describe('DLQ event introspection', () => {

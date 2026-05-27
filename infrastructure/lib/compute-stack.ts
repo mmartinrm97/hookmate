@@ -68,7 +68,7 @@ export class ComputeStack extends Stack {
     // Node.js 20.x, 256MB memory, 30s timeout, X-Ray tracing enabled.
     const commonLambdaProps = {
       runtime: Runtime.NODEJS_20_X,
-      code: Code.fromAsset('../apps/api/dist'),
+      code: Code.fromAsset('../apps/api/dist/src'),
       memorySize: 256,
       timeout: Duration.seconds(30),
       tracing: Tracing.ACTIVE,
@@ -88,7 +88,7 @@ export class ComputeStack extends Stack {
     // and returns 202 Accepted.
     this.ingestionLambda = new Function(this, 'IngestionFunction', {
       ...commonLambdaProps,
-      handler: 'ingestion.handler',
+      handler: 'lambda/ingestion.handler',
       description: 'Webhook ingestion — validates endpoint, persists event, enqueues to SQS',
       environment: {
         ...commonEnv,
@@ -109,7 +109,7 @@ export class ComputeStack extends Stack {
     // attempts. On failure, schedules retry via BullMQ or promotes to DLQ.
     this.processorLambda = new Function(this, 'ProcessorFunction', {
       ...commonLambdaProps,
-      handler: 'processor.handler',
+      handler: 'lambda/processor.handler',
       description: 'Event processor — delivers webhook payload, handles retries and DLQ promotion',
       environment: {
         ...commonEnv,
@@ -136,7 +136,7 @@ export class ComputeStack extends Stack {
     // publishes to SNS alarm topic.
     this.dlqLambda = new Function(this, 'DlqFunction', {
       ...commonLambdaProps,
-      handler: 'dlq.handler',
+      handler: 'lambda/dlq.handler',
       description: 'DLQ handler — captures failure context, writes dlq_events row',
       environment: {
         ...commonEnv,
@@ -156,7 +156,7 @@ export class ComputeStack extends Stack {
     // Also classifies individual events into categories.
     this.aiLambda = new Function(this, 'AiFunction', {
       ...commonLambdaProps,
-      handler: 'ai.handler',
+      handler: 'lambda/ai.handler',
       timeout: Duration.minutes(5), // AI calls may take longer
       description: 'AI background worker — generates event summaries and classifies events',
       environment: {
