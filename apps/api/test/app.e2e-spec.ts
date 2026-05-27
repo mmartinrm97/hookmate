@@ -10,6 +10,7 @@ import { configureApp } from './../src/configure-app';
 process.env['POSTGRES_USER'] = process.env['POSTGRES_USER'] ?? 'hookmate';
 process.env['POSTGRES_PASSWORD'] = process.env['POSTGRES_PASSWORD'] ?? 'hookmate';
 process.env['POSTGRES_DB'] = process.env['POSTGRES_DB'] ?? 'hookmate';
+process.env['API_KEYS'] = process.env['API_KEYS'] ?? 'dev-key-123';
 
 interface HealthPayload {
   service: string;
@@ -53,8 +54,12 @@ describe.skipIf(!isDbAvailable)('API bootstrap (e2e)', () => {
   });
 
   it('/api/v1/endpoints CRUD lifecycle', async () => {
+    const apiKey = process.env['API_KEYS'] ?? 'dev-key-123';
+    const authHeader = { Authorization: `Bearer ${apiKey}` };
+
     const createResponse = await request(app.getHttpServer())
       .post('/api/v1/endpoints')
+      .set(authHeader)
       .send({
         name: 'Billing endpoint',
         destinationUrl: 'https://example.com/webhooks/billing',
@@ -66,7 +71,10 @@ describe.skipIf(!isDbAvailable)('API bootstrap (e2e)', () => {
     expect(createdEndpoint.name).toBe('Billing endpoint');
     expect(createdEndpoint.status).toBe('active');
 
-    const listResponse = await request(app.getHttpServer()).get('/api/v1/endpoints').expect(200);
+    const listResponse = await request(app.getHttpServer())
+      .get('/api/v1/endpoints')
+      .set(authHeader)
+      .expect(200);
 
     const endpoints = listResponse.body as EndpointPayload[];
 
@@ -75,12 +83,14 @@ describe.skipIf(!isDbAvailable)('API bootstrap (e2e)', () => {
 
     const pauseResponse = await request(app.getHttpServer())
       .patch(`/api/v1/endpoints/${createdEndpoint.id}/pause`)
+      .set(authHeader)
       .expect(200);
 
     expect((pauseResponse.body as EndpointPayload).status).toBe('paused');
 
     const resumeResponse = await request(app.getHttpServer())
       .patch(`/api/v1/endpoints/${createdEndpoint.id}/resume`)
+      .set(authHeader)
       .expect(200);
 
     expect((resumeResponse.body as EndpointPayload).status).toBe('active');

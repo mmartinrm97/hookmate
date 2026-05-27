@@ -7,6 +7,7 @@ import {
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { HttpAdapterHost } from '@nestjs/core';
+import { Readable } from 'node:stream';
 import { IngestionService } from './ingestion.service';
 
 interface FastifyRequestLike {
@@ -63,7 +64,9 @@ export class IngestionController implements OnApplicationBootstrap {
         stream.on('data', (chunk: unknown) => chunks.push(chunk as Buffer));
         stream.on('end', () => {
           req.rawBody = Buffer.concat(chunks);
-          done(null, req.rawBody);
+          // Fastify's preParsing expects a Readable stream, not a Buffer.
+          // Passing a Buffer causes Fastify to hang when trying to pipe it.
+          done(null, Readable.from([req.rawBody]));
         });
         stream.on('error', (err: unknown) => done(err as Error | null));
       } else {

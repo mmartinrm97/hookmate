@@ -8,6 +8,7 @@ import { configureApp } from '../src/configure-app';
 process.env['POSTGRES_USER'] = process.env['POSTGRES_USER'] ?? 'hookmate';
 process.env['POSTGRES_PASSWORD'] = process.env['POSTGRES_PASSWORD'] ?? 'hookmate';
 process.env['POSTGRES_DB'] = process.env['POSTGRES_DB'] ?? 'hookmate';
+process.env['API_KEYS'] = process.env['API_KEYS'] ?? 'test-api-key-for-integration';
 
 const isDbAvailable = !!process.env['POSTGRES_HOST'];
 
