@@ -23,16 +23,16 @@ otelSdk.start();
 
 ## 11.2 Required spans
 
-| Span name                    | Attributes                                              |
-| ---------------------------- | ------------------------------------------------------- |
-| `hookmate.ingest`            | `endpoint.id`, `event.id`, `http.method`, `http.status` |
-| `hookmate.sig.verify`        | `endpoint.id`, `sig.valid`, `sig.provider` (generic)   |
-| `hookmate.db.write`          | `db.table`, `event.id`                                  |
-| `hookmate.queue.publish`     | `queue.url`, `event.id`                                 |
-| `hookmate.process`           | `endpoint.id`, `event.id`, `attempt.number`             |
-| `hookmate.route.eval`        | `rule.id`, `rule.matched`, `destination.type`           |
-| `hookmate.deliver`           | `destination.url`, `http.status`, `latency_ms`          |
-| `hookmate.ai.generate`       | `endpoint.id`, `model`, `token.count`                   |
+| Span name                | Attributes                                              |
+| ------------------------ | ------------------------------------------------------- |
+| `hookmate.ingest`        | `endpoint.id`, `event.id`, `http.method`, `http.status` |
+| `hookmate.sig.verify`    | `endpoint.id`, `sig.valid`, `sig.provider` (generic)    |
+| `hookmate.db.write`      | `db.table`, `event.id`                                  |
+| `hookmate.queue.publish` | `queue.url`, `event.id`                                 |
+| `hookmate.process`       | `endpoint.id`, `event.id`, `attempt.number`             |
+| `hookmate.route.eval`    | `rule.id`, `rule.matched`, `destination.type`           |
+| `hookmate.deliver`       | `destination.url`, `http.status`, `latency_ms`          |
+| `hookmate.ai.generate`   | `endpoint.id`, `model`, `token.count`                   |
 
 ## 11.3 CloudWatch dashboard widgets
 
@@ -44,10 +44,10 @@ Row 3: [DLQ depth]                   [AI Lambda last run status]
 
 ## 11.4 Alarms
 
-| Alarm                          | Threshold                   | Action         |
-| ------------------------------ | --------------------------- | -------------- |
-| IngestionErrorRate             | > 1% in 5min                | SNS → Slack    |
-| ProcessorErrorRate             | > 5% in 5min                | SNS → Slack    |
-| DLQDepth                       | > 100 messages              | SNS → Slack    |
-| IngestionLatencyP99            | > 200ms                     | SNS → PagerDuty|
-| AILambdaErrors                 | > 3 in 30min                | SNS → CloudWatch log only |
+| Alarm               | Threshold      | Action                    |
+| ------------------- | -------------- | ------------------------- |
+| IngestionErrorRate  | > 1% in 5min   | SNS → Slack               |
+| ProcessorErrorRate  | > 5% in 5min   | SNS → Slack               |
+| DLQDepth            | > 100 messages | SNS → Slack               |
+| IngestionLatencyP99 | > 200ms        | SNS → PagerDuty           |
+| AILambdaErrors      | > 3 in 30min   | SNS → CloudWatch log only |

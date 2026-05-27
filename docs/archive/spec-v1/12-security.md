@@ -25,13 +25,13 @@ export function verifyHmacSignature(
 
 ## 12.2 IAM least privilege
 
-| Function              | SQS           | RDS       | Secrets Manager           | SNS       | S3        |
-| --------------------- | ------------- | --------- | ------------------------- | --------- | --------- |
-| Ingestion Lambda      | SendMessage   | Read      | GetSecretValue            | —         | PutObject |
-| Processor Lambda      | ReceiveMessage, DeleteMessage | Read/Write | GetSecretValue | Publish | GetObject |
-| DLQ Lambda            | ReceiveMessage, DeleteMessage | Write     | GetSecretValue            | Publish   | —         |
-| AI Background Lambda  | —             | Read/Write| GetSecretValue            | —         | —         |
-| NestJS API Lambda     | —             | Read/Write| GetSecretValue            | —         | —         |
+| Function             | SQS                           | RDS        | Secrets Manager | SNS     | S3        |
+| -------------------- | ----------------------------- | ---------- | --------------- | ------- | --------- |
+| Ingestion Lambda     | SendMessage                   | Read       | GetSecretValue  | —       | PutObject |
+| Processor Lambda     | ReceiveMessage, DeleteMessage | Read/Write | GetSecretValue  | Publish | GetObject |
+| DLQ Lambda           | ReceiveMessage, DeleteMessage | Write      | GetSecretValue  | Publish | —         |
+| AI Background Lambda | —                             | Read/Write | GetSecretValue  | —       | —         |
+| NestJS API Lambda    | —                             | Read/Write | GetSecretValue  | —       | —         |
 
 ## 12.3 API key authentication
 

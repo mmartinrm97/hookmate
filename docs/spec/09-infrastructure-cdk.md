@@ -88,8 +88,8 @@ Private subnets (2 AZs): 10.0.10.0/24, 10.0.11.0/24
 
 ## 9.4 Secrets Manager entries
 
-| Secret name                       | Contents                                                      |
-| --------------------------------- | ------------------------------------------------------------- |
-| `hookmate/db/master`              | `{ username, password, host, port, dbname }` (auto-rotated)  |
-| `hookmate/api-key`                | API key for dashboard authentication                          |
-| `hookmate/openai-api-key`         | OpenAI API key for AI background Lambda                       |
+| Secret name               | Contents                                                    |
+| ------------------------- | ----------------------------------------------------------- |
+| `hookmate/db/master`      | `{ username, password, host, port, dbname }` (auto-rotated) |
+| `hookmate/api-key`        | API key for dashboard authentication                        |
+| `hookmate/openai-api-key` | OpenAI API key for AI background Lambda                     |

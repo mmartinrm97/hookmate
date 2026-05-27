@@ -23,19 +23,19 @@ otelSdk.start();
 
 ## 11.2 Required spans
 
-| Span name                    | Attributes                                                                           |
-| ---------------------------- | ------------------------------------------------------------------------------------ |
-| `hookmate.ingest`            | `endpoint.id`, `event.id`, `http.method`, `http.status`                             |
-| `hookmate.sig.verify`        | `endpoint.id`, `sig.valid`, `sig.provider` (generic \| github \| stripe \| shopify) |
-| `hookmate.db.write`          | `db.table`, `event.id`                                                               |
-| `hookmate.queue.publish`     | `queue.url`, `event.id`                                                              |
-| `hookmate.circuit.check`     | `endpoint.id`, `circuit.state` (closed \| open \| half-open)                        |
-| `hookmate.process`           | `endpoint.id`, `event.id`, `attempt.number`                                          |
-| `hookmate.route.eval`        | `rule.id`, `rule.matched`, `destination.type`                                        |
-| `hookmate.deliver`           | `destination.url`, `http.status`, `latency_ms`                                       |
-| `hookmate.circuit.update`    | `endpoint.id`, `circuit.outcome` (success \| failure), `circuit.new_state`          |
-| `hookmate.ai.generate`       | `endpoint.id`, `model`, `token.count`                                                |
-| `hookmate.dlq.write`         | `endpoint.id`, `event.id`, `failure_reason`                                          |
+| Span name                 | Attributes                                                                          |
+| ------------------------- | ----------------------------------------------------------------------------------- |
+| `hookmate.ingest`         | `endpoint.id`, `event.id`, `http.method`, `http.status`                             |
+| `hookmate.sig.verify`     | `endpoint.id`, `sig.valid`, `sig.provider` (generic \| github \| stripe \| shopify) |
+| `hookmate.db.write`       | `db.table`, `event.id`                                                              |
+| `hookmate.queue.publish`  | `queue.url`, `event.id`                                                             |
+| `hookmate.circuit.check`  | `endpoint.id`, `circuit.state` (closed \| open \| half-open)                        |
+| `hookmate.process`        | `endpoint.id`, `event.id`, `attempt.number`                                         |
+| `hookmate.route.eval`     | `rule.id`, `rule.matched`, `destination.type`                                       |
+| `hookmate.deliver`        | `destination.url`, `http.status`, `latency_ms`                                      |
+| `hookmate.circuit.update` | `endpoint.id`, `circuit.outcome` (success \| failure), `circuit.new_state`          |
+| `hookmate.ai.generate`    | `endpoint.id`, `model`, `token.count`                                               |
+| `hookmate.dlq.write`      | `endpoint.id`, `event.id`, `failure_reason`                                         |
 
 ## 11.3 CloudWatch dashboard widgets
 
@@ -48,11 +48,11 @@ Row 4: [AI Lambda last run status]   [Circuit state per endpoint (table)]
 
 ## 11.4 Alarms
 
-| Alarm                          | Threshold                   | Action         |
-| ------------------------------ | --------------------------- | -------------- |
-| IngestionErrorRate             | > 1% in 5min                | SNS → Slack    |
-| ProcessorErrorRate             | > 5% in 5min                | SNS → Slack    |
-| DLQDepth                       | > 100 messages              | SNS → Slack    |
-| IngestionLatencyP99            | > 200ms                     | SNS → PagerDuty|
-| CircuitBreakerTrips            | > 3 trips in 10min          | SNS → Slack    |
-| AILambdaErrors                 | > 3 in 30min                | SNS → CloudWatch log only |
+| Alarm               | Threshold          | Action                    |
+| ------------------- | ------------------ | ------------------------- |
+| IngestionErrorRate  | > 1% in 5min       | SNS → Slack               |
+| ProcessorErrorRate  | > 5% in 5min       | SNS → Slack               |
+| DLQDepth            | > 100 messages     | SNS → Slack               |
+| IngestionLatencyP99 | > 200ms            | SNS → PagerDuty           |
+| CircuitBreakerTrips | > 3 trips in 10min | SNS → Slack               |
+| AILambdaErrors      | > 3 in 30min       | SNS → CloudWatch log only |

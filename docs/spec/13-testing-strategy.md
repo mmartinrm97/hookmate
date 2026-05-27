@@ -7,6 +7,7 @@
 Target: **80% line coverage** across all Lambda handlers and service classes.
 
 Test areas:
+
 - HMAC signature verification — all provider adapters (GitHub, Stripe with timestamp tolerance, Shopify base64 decode, generic fallback)
 - Circuit breaker state machine: closed → open (failure threshold), open → half-open (TTL expiry), half-open → closed (probe success), half-open → open (probe failure)
 - Routing rule evaluation (priority order, first-match-wins, no-match fallback)
@@ -57,6 +58,7 @@ export const sqs = new SQSClient({
 ```
 
 Floci test scenarios:
+
 1. **Ingestion → SQS publish**: POST event, verify SQS message appears in queue
 2. **Processor → delivery**: Seed SQS message, mock HTTP destination, verify `events.status = delivered`
 3. **Retry flow**: Mock destination returns 503 three times, verify BullMQ retries and attempt records
@@ -69,6 +71,7 @@ Floci test scenarios:
 10. **Secrets Manager rotation**: Rotate `hookmate/api-key` secret in Floci, verify Lambda refreshes cache on next invocation and accepts new key
 
 **Floci facts:**
+
 - All Floci resources are seeded via JSON files in `data/floci/` — committed to the repo
 - Tests are idempotent: `TRUNCATE events, delivery_attempts, dlq_events CASCADE` before each suite
 - No real AWS credentials needed for any test
@@ -76,6 +79,7 @@ Floci test scenarios:
 ## 13.3 E2E tests (Playwright)
 
 Scenarios:
+
 1. User creates endpoint, receives an event, sees it in the dashboard event log
 2. User retries a DLQ event and sees it move to `delivered`
 3. User creates a routing rule and verifies the next event is routed to the new destination

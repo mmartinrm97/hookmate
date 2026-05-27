@@ -25,13 +25,13 @@ export function verifyHmacSignature(
 
 ## 12.2 IAM least privilege
 
-| Function              | SQS           | RDS       | Secrets Manager           | SNS       | S3        |
-| --------------------- | ------------- | --------- | ------------------------- | --------- | --------- |
-| Ingestion Lambda      | SendMessage   | Read      | GetSecretValue            | —         | PutObject |
-| Processor Lambda      | ReceiveMessage, DeleteMessage | Read/Write | GetSecretValue | Publish | GetObject |
-| DLQ Lambda            | ReceiveMessage, DeleteMessage | Write     | GetSecretValue            | Publish   | —         |
-| AI Background Lambda  | —             | Read/Write| GetSecretValue            | —         | —         |
-| NestJS API Lambda     | —             | Read/Write| GetSecretValue            | —         | —         |
+| Function             | SQS                           | RDS        | Secrets Manager | SNS     | S3        |
+| -------------------- | ----------------------------- | ---------- | --------------- | ------- | --------- |
+| Ingestion Lambda     | SendMessage                   | Read       | GetSecretValue  | —       | PutObject |
+| Processor Lambda     | ReceiveMessage, DeleteMessage | Read/Write | GetSecretValue  | Publish | GetObject |
+| DLQ Lambda           | ReceiveMessage, DeleteMessage | Write      | GetSecretValue  | Publish | —         |
+| AI Background Lambda | —                             | Read/Write | GetSecretValue  | —       | —         |
+| NestJS API Lambda    | —                             | Read/Write | GetSecretValue  | —       | —         |
 
 ## 12.3 API key authentication
 
@@ -51,12 +51,12 @@ API keys are stored in Secrets Manager (`hookmate/api-key`). The NestJS API uses
 
 Provider implementations live in `packages/shared/src/webhook-providers/`.
 
-| Provider  | Header                     | Format                          | Extra validation                          |
-| --------- | -------------------------- | ------------------------------- | ----------------------------------------- |
-| GitHub    | `X-Hub-Signature-256`      | `sha256=<hex>`                  | none                                      |
-| Generic   | `X-Hub-Signature-256`      | `sha256=<hex>`                  | none                                      |
-| Stripe    | `X-Stripe-Signature`       | `t=<unix_ts>,v1=<hex>`          | Reject if `|now - t| > 300s` (replay)     |
-| Shopify   | `X-Shopify-Hmac-SHA256`    | `<base64>`                      | Decode base64, compare hex                |
+| Provider | Header                  | Format                 | Extra validation           |
+| -------- | ----------------------- | ---------------------- | -------------------------- | ------- | ---------------- |
+| GitHub   | `X-Hub-Signature-256`   | `sha256=<hex>`         | none                       |
+| Generic  | `X-Hub-Signature-256`   | `sha256=<hex>`         | none                       |
+| Stripe   | `X-Stripe-Signature`    | `t=<unix_ts>,v1=<hex>` | Reject if `                | now - t | > 300s` (replay) |
+| Shopify  | `X-Shopify-Hmac-SHA256` | `<base64>`             | Decode base64, compare hex |
 
 **Stripe adapter (example):**
 
@@ -70,9 +70,7 @@ export function verifyStripeSignature(
   header: string, // "t=1234567890,v1=abc123..."
   toleranceSeconds = 300,
 ): boolean {
-  const parts = Object.fromEntries(
-    header.split(',').map((p) => p.split('=')),
-  );
+  const parts = Object.fromEntries(header.split(',').map((p) => p.split('=')));
   const timestamp = parseInt(parts['t'], 10);
   if (Math.abs(Date.now() / 1000 - timestamp) > toleranceSeconds) {
     return false; // replay attack prevention
