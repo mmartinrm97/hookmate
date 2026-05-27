@@ -46,7 +46,7 @@ export class ProcessorService {
         const event = await this.loadEvent(event_id);
         if (!event) {
           return {
-            status: 'skipped',
+            status: 'skipped' as const,
             eventId: event_id,
             endpointId: endpoint_id,
             attemptNumber: attempt_number,
@@ -56,7 +56,7 @@ export class ProcessorService {
         const endpoint = await this.loadEndpoint(endpoint_id);
         if (!endpoint) {
           return {
-            status: 'skipped',
+            status: 'skipped' as const,
             eventId: event_id,
             endpointId: endpoint_id,
             attemptNumber: attempt_number,
@@ -67,7 +67,7 @@ export class ProcessorService {
         if (endpoint.status === 'paused') {
           this.logger.log(`Endpoint ${endpoint_id} is paused — skipping event ${event_id}`);
           return {
-            status: 'skipped',
+            status: 'skipped' as const,
             eventId: event_id,
             endpointId: endpoint_id,
             attemptNumber: attempt_number,
@@ -109,7 +109,7 @@ export class ProcessorService {
           await this.eventsService.updateStatus(event_id, 'delivered');
           span.setAttribute(OtelAttributes.EVENT_STATUS, 'delivered');
           return {
-            status: 'delivered',
+            status: 'delivered' as const,
             eventId: event_id,
             endpointId: endpoint_id,
             attemptNumber: attempt_number,
@@ -138,7 +138,7 @@ export class ProcessorService {
 
           span.setAttribute(OtelAttributes.EVENT_STATUS, 'failed_retry');
           return {
-            status: 'failed_retry',
+            status: 'failed_retry' as const,
             eventId: event_id,
             endpointId: endpoint_id,
             attemptNumber: attempt_number,
@@ -152,7 +152,7 @@ export class ProcessorService {
 
         span.setAttribute(OtelAttributes.EVENT_STATUS, 'dead_lettered');
         return {
-          status: 'dead_lettered',
+          status: 'dead_lettered' as const,
           eventId: event_id,
           endpointId: endpoint_id,
           attemptNumber: attempt_number,

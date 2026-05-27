@@ -33,7 +33,10 @@ export class DeliveryService {
 
         const latencyMs = Date.now() - start;
         const responseBody = this.truncateResponse(response.data);
-        const status = response.status >= 200 && response.status < 300 ? 'success' : 'failed';
+        const status =
+          response.status >= 200 && response.status < 300
+            ? ('success' as const)
+            : ('failed' as const);
 
         span.setAttribute(OtelAttributes.DELIVERY_STATUS, status);
         if (response.status) {
@@ -55,7 +58,7 @@ export class DeliveryService {
         if (axiosError.code === 'ECONNABORTED') {
           span.setAttribute(OtelAttributes.DELIVERY_STATUS, 'timeout');
           span.recordException(new Error('Delivery timeout'));
-          return { status: 'timeout', httpStatus: null, latencyMs, responseBody: null };
+          return { status: 'timeout' as const, httpStatus: null, latencyMs, responseBody: null };
         }
 
         const httpStatus = axiosError.response?.status ?? null;
@@ -66,7 +69,7 @@ export class DeliveryService {
         span.recordException(error as Error);
 
         return {
-          status: 'failed',
+          status: 'failed' as const,
           httpStatus,
           latencyMs,
           responseBody: null,

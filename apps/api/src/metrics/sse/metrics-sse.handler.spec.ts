@@ -7,7 +7,7 @@ vi.mock('@nestjs/core', () => ({
 }));
 
 vi.mock('@nestjs/common', async () => {
-  const actual = await vi.importActual('@nestjs/common');
+  const actual = await vi.importActual<typeof import('@nestjs/common')>('@nestjs/common');
   return {
     ...actual,
     Logger: class {
@@ -18,11 +18,12 @@ vi.mock('@nestjs/common', async () => {
   };
 });
 
+// Import after mocks are set up
+import { MetricsSseHandler } from './metrics-sse.handler';
+
 describe('MetricsSseHandler', () => {
   describe('onApplicationBootstrap()', () => {
-    it('registers a GET handler for /api/metrics/stream', async () => {
-      const { MetricsSseHandler } = await import('./metrics-sse.handler');
-
+    it('registers a GET handler for /api/metrics/stream', () => {
       mockGetCalls.length = 0;
 
       const mockSqsService = {
