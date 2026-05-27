@@ -8,7 +8,7 @@ import { configureApp } from '../src/configure-app';
 process.env['POSTGRES_USER'] = process.env['POSTGRES_USER'] ?? 'hookmate';
 process.env['POSTGRES_PASSWORD'] = process.env['POSTGRES_PASSWORD'] ?? 'hookmate';
 process.env['POSTGRES_DB'] = process.env['POSTGRES_DB'] ?? 'hookmate';
-process.env['API_KEYS'] = process.env['API_KEYS'] ?? 'test-api-key-for-integration';
+process.env['API_KEYS'] = 'dev-key-123';
 
 const isDbAvailable = !!process.env['POSTGRES_HOST'];
 
@@ -43,7 +43,7 @@ describe.skipIf(!isDbAvailable)('Management API (integration)', () => {
     await dataSource.query('DELETE FROM endpoints');
   });
 
-  const apiKey = 'test-api-key-for-integration';
+  const apiKey = 'dev-key-123';
 
   describe('Auth guard', () => {
     it('rejects unauthenticated requests with 401 on events endpoint', async () => {

@@ -1,4 +1,4 @@
-import { SQSClient, ReceiveMessageCommand } from '@aws-sdk/client-sqs';
+import { DeleteMessageCommand, SQSClient, ReceiveMessageCommand } from '@aws-sdk/client-sqs';
 import { Test, TestingModule } from '@nestjs/testing';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import request from 'supertest';
@@ -239,6 +239,22 @@ e2eSuite('POST /webhooks/:endpointId (e2e)', () => {
     });
 
     it('publishes an ingestion message to the SQS queue', async () => {
+      const queueUrl = process.env['SQS_INGESTION_QUEUE_URL']!;
+
+      // Drain any leftover messages from earlier tests so we poll exactly our own message
+      const drain = await sqsClient.send(
+        new ReceiveMessageCommand({
+          QueueUrl: queueUrl,
+          MaxNumberOfMessages: 10,
+          WaitTimeSeconds: 0,
+        }),
+      );
+      for (const msg of drain.Messages ?? []) {
+        await sqsClient.send(
+          new DeleteMessageCommand({ QueueUrl: queueUrl, ReceiptHandle: msg.ReceiptHandle! }),
+        );
+      }
+
       // Create endpoint
       const createResponse = await request(app.getHttpServer())
         .post('/api/v1/endpoints')
@@ -260,7 +276,6 @@ e2eSuite('POST /webhooks/:endpointId (e2e)', () => {
       const result = ingestResponse.body as IngestResponse;
 
       // Poll SQS for the message
-      const queueUrl = process.env['SQS_INGESTION_QUEUE_URL']!;
       const receiveResponse = await sqsClient.send(
         new ReceiveMessageCommand({
           QueueUrl: queueUrl,

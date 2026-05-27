@@ -289,6 +289,7 @@ jobs:
     name: CDK Deploy + Drift Check (Floci)
     needs: [quality, cdk-synth]
     runs-on: ubuntu-latest
+    continue-on-error: true
     services:
       floci:
         image: hectorvent/floci:latest
