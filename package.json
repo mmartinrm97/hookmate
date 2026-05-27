@@ -28,6 +28,10 @@
     "sonar": "node scripts/sonar.mjs",
     "infra:synth": "pnpm --filter @hookmate/infrastructure synth",
     "infra:deploy": "pnpm --filter @hookmate/infrastructure deploy",
+    "services:up": "docker compose up -d",
+    "services:down": "docker compose down",
+    "test:e2e:local": "bash scripts/test-e2e-local.sh",
+    "test:e2e:local:cdk": "bash scripts/test-e2e-local.sh --cdk",
     "prepare": "husky"
   },
   "devDependencies": {
