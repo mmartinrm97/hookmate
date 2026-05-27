@@ -4,7 +4,10 @@ function toSnakeCase(str: string): string {
   return str.replace(/([A-Z])/g, (match) => `_${match.toLowerCase()}`).replace(/^_/, '');
 }
 
-export class SnakeCaseNamingStrategy extends DefaultNamingStrategy implements NamingStrategyInterface {
+export class SnakeCaseNamingStrategy
+  extends DefaultNamingStrategy
+  implements NamingStrategyInterface
+{
   override columnName(
     propertyName: string,
     customName: string | undefined,

@@ -39,12 +39,14 @@ HookMate is a production-grade webhook automation platform with event-driven arc
 ### Ingestion Layer
 
 **IngestionController** (`apps/api/src/ingestion/`)
+
 - Registers raw Fastify route at `/webhooks/:endpointId`
 - Captures raw body via `preParsing` hook for HMAC verification
 - Delegates to `IngestionService` for processing
 - Returns `202 Accepted` immediately
 
 **IngestionService**
+
 - Validates endpoint exists and is active
 - Verifies HMAC signature (if provided)
 - Writes event to PostgreSQL with status `received`
@@ -54,11 +56,13 @@ HookMate is a production-grade webhook automation platform with event-driven arc
 ### Processing Layer
 
 **SqsConsumerService** (`apps/api/src/processor/`)
+
 - Polls SQS ingestion queue (dev mode) or receives Lambda events (prod)
 - Deserializes `IngestionMessage` payload
 - Delegates to `ProcessorService` for each message
 
 **ProcessorService**
+
 - Fetches routing rules for the endpoint
 - Evaluates rules in priority order (header, json_path, source_ip)
 - Attempts HTTP delivery with timeout (10s)
@@ -67,6 +71,7 @@ HookMate is a production-grade webhook automation platform with event-driven arc
 - After max retries: promotes to DLQ
 
 **DeliveryService**
+
 - Makes HTTP POST to destination URL
 - Handles timeouts, redirects, error responses
 - Returns delivery result with status code and response body
@@ -74,12 +79,14 @@ HookMate is a production-grade webhook automation platform with event-driven arc
 ### Dead Letter Queue
 
 **DlqPromoterService** (`apps/api/src/dlq-events/`)
+
 - Triggered when event exceeds max retries
 - Writes full event context to `dlq_events` table
 - Checks DLQ depth against endpoint threshold
 - Publishes SNS notification if threshold exceeded
 
 **DlqAlertService**
+
 - Publishes to SNS topic `SNS_ALARM_TOPIC_ARN`
 - Message includes endpoint ID, DLQ depth, threshold
 - Used for CloudWatch alarms and operator notifications
@@ -87,6 +94,7 @@ HookMate is a production-grade webhook automation platform with event-driven arc
 ### AI Background
 
 **AiSummaryService** (`apps/api/src/ai-summaries/`)
+
 - Runs every 30 minutes via BullMQ repeatable job
 - Queries events per endpoint for last 24 hours
 - Calls OpenAI for summary generation (gpt-4o-mini)
@@ -107,6 +115,7 @@ HookMate is a production-grade webhook automation platform with event-driven arc
 ### Infrastructure
 
 **CDK Stacks** (`infrastructure/lib/`)
+
 - `DatabaseStack` — RDS PostgreSQL, VPC, security groups
 - `CacheStack` — ElastiCache Redis
 - `QueueStack` — SQS ingestion queue + DLQ
@@ -117,6 +126,7 @@ HookMate is a production-grade webhook automation platform with event-driven arc
 - `FrontendStack` — S3 + CloudFront for dashboard
 
 **Terraform Mirror** (`terraform/`)
+
 - Equivalent infrastructure in Terraform
 - 9 modules matching CDK stacks
 - `COMPARISON.md` with CDK vs Terraform analysis

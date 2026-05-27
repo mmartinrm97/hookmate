@@ -11,6 +11,7 @@ When CloudWatch alarm `DLQDepthThreshold` fires:
    - Note the endpoint ID and current DLQ depth
 
 2. **Investigate the root cause**
+
    ```bash
    # Query recent DLQ events for the endpoint
    psql -h localhost -p 5433 -U hookmate -d hookmate -c "
@@ -59,12 +60,14 @@ When CloudWatch alarm `DLQDepthThreshold` fires:
 When you need to stop processing new events:
 
 1. **Pause the endpoint** (stops new ingestion)
+
    ```bash
    curl -X PATCH http://localhost:3000/api/endpoints/<endpoint-id>/pause \
      -H "Authorization: Bearer local-dev-key"
    ```
 
 2. **Check queue depth**
+
    ```bash
    # Via AWS CLI (local Floci)
    aws --endpoint-url http://localhost:4566 sqs get-queue-attributes \
@@ -73,6 +76,7 @@ When you need to stop processing new events:
    ```
 
 3. **Wait for processor to drain** (or stop the processor service)
+
    ```bash
    # Stop API (which runs the processor in dev mode)
    # Events will remain in queue until processor restarts
@@ -87,6 +91,7 @@ When you need to stop processing new events:
 ### Drain DLQ
 
 1. **Retry all DLQ events** (if destination is fixed)
+
    ```bash
    curl -X POST http://localhost:3000/api/dlq/retry-all \
      -H "Authorization: Bearer local-dev-key"
@@ -103,12 +108,14 @@ When you need to stop processing new events:
 ### CDK Rollback
 
 1. **Identify the previous successful deployment**
+
    ```bash
    cd infrastructure
    cdk list  # list all stacks
    ```
 
 2. **Deploy the previous version**
+
    ```bash
    # Checkout the previous commit
    git checkout <previous-commit-hash>
@@ -130,6 +137,7 @@ When you need to stop processing new events:
 If CDK deploy fails and you need to restore quickly:
 
 1. **Stop the failing Lambda**
+
    ```bash
    aws lambda update-function-configuration \
      --function-name HookMateIngestionLambda \
@@ -137,6 +145,7 @@ If CDK deploy fails and you need to restore quickly:
    ```
 
 2. **Republish previous version**
+
    ```bash
    # Get the previous version ARN from Lambda console
    aws lambda publish-version \
@@ -213,18 +222,21 @@ redis-cli -h localhost -p 6379 keys "bull:*"
 ### API Won't Start
 
 1. **Check PostgreSQL is running**
+
    ```bash
    docker ps | grep postgres
    docker-compose up -d postgres
    ```
 
 2. **Check Redis is running**
+
    ```bash
    docker ps | grep redis
    docker-compose up -d redis
    ```
 
 3. **Check Floci is running**
+
    ```bash
    docker ps | grep floci
    docker-compose up -d floci
@@ -239,6 +251,7 @@ redis-cli -h localhost -p 6379 keys "bull:*"
 ### Events Not Being Processed
 
 1. **Check SQS queue has messages**
+
    ```bash
    aws --endpoint-url http://localhost:4566 sqs get-queue-attributes \
      --queue-url http://localhost:4566/000000000000/hookmate-ingestion \
@@ -246,6 +259,7 @@ redis-cli -h localhost -p 6379 keys "bull:*"
    ```
 
 2. **Check processor is running**
+
    ```bash
    # Look for processor logs in API output
    # Should see: "Processing message: { event_id, endpoint_id }"
@@ -259,11 +273,13 @@ redis-cli -h localhost -p 6379 keys "bull:*"
 ### DLQ Growing Rapidly
 
 1. **Check destination health**
+
    ```bash
    curl -I <destination-url>
    ```
 
 2. **Check error messages in DLQ**
+
    ```bash
    psql -h localhost -p 5433 -U hookmate -d hookmate -c "
      SELECT error_message, count(*) as count

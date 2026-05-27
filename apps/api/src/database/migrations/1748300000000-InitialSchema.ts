@@ -147,7 +147,9 @@ export class InitialSchema1748300000000 implements MigrationInterface {
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`ALTER TABLE "ai_summaries" DROP CONSTRAINT "FK_ai_summaries_endpoint_id"`);
+    await queryRunner.query(
+      `ALTER TABLE "ai_summaries" DROP CONSTRAINT "FK_ai_summaries_endpoint_id"`,
+    );
     await queryRunner.query(`DROP TABLE "ai_summaries"`);
 
     await queryRunner.query(
@@ -155,9 +157,7 @@ export class InitialSchema1748300000000 implements MigrationInterface {
     );
     await queryRunner.query(`DROP TABLE "routing_rules"`);
 
-    await queryRunner.query(
-      `ALTER TABLE "dlq_events" DROP CONSTRAINT "FK_dlq_events_endpoint_id"`,
-    );
+    await queryRunner.query(`ALTER TABLE "dlq_events" DROP CONSTRAINT "FK_dlq_events_endpoint_id"`);
     await queryRunner.query(`ALTER TABLE "dlq_events" DROP CONSTRAINT "FK_dlq_events_event_id"`);
     await queryRunner.query(`DROP TABLE "dlq_events"`);
 

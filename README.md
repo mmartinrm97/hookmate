@@ -23,18 +23,18 @@ POST /webhooks/{endpointId}
 
 ### Tech Stack
 
-| Layer            | Technology                                    |
-| ---------------- | --------------------------------------------- |
-| API Framework    | NestJS 11 + Fastify (Lambda target)           |
-| Queue            | BullMQ + Redis (ElastiCache)                  |
-| Database         | TypeORM + PostgreSQL 16 (RDS)                 |
-| AWS SDK          | `@aws-sdk/client-sqs`, `sns`, `secrets-manager` |
-| AI               | OpenAI SDK (`gpt-4o-mini`)                    |
-| Dashboard        | React 19 + Vite + TanStack Query + Recharts   |
-| Infrastructure   | AWS CDK v2 + Terraform mirror                 |
-| CI/CD            | GitHub Actions                                |
-| Testing          | Vitest (unit + integration), Supertest (e2e)  |
-| Linting          | oxlint + oxfmt                                |
+| Layer          | Technology                                      |
+| -------------- | ----------------------------------------------- |
+| API Framework  | NestJS 11 + Fastify (Lambda target)             |
+| Queue          | BullMQ + Redis (ElastiCache)                    |
+| Database       | TypeORM + PostgreSQL 16 (RDS)                   |
+| AWS SDK        | `@aws-sdk/client-sqs`, `sns`, `secrets-manager` |
+| AI             | OpenAI SDK (`gpt-4o-mini`)                      |
+| Dashboard      | React 19 + Vite + TanStack Query + Recharts     |
+| Infrastructure | AWS CDK v2 + Terraform mirror                   |
+| CI/CD          | GitHub Actions                                  |
+| Testing        | Vitest (unit + integration), Supertest (e2e)    |
+| Linting        | oxlint + oxfmt                                  |
 
 ## Local Development
 

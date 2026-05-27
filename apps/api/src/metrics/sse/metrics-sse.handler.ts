@@ -1,6 +1,6 @@
 import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { HttpAdapterHost } from '@nestjs/core';
-import type { SqsService } from '../../sqs/sqs.service';
+import { SqsService } from '../../sqs/sqs.service';
 
 const SSE_INTERVAL_MS = 5_000;
 const SSE_RETRY_MS = 3_000;
