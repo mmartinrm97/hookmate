@@ -10,6 +10,12 @@ WITH_CDK="${1:-}"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT"
 
+# On Windows (Git Bash / MINGW), Docker Desktop uses a named pipe.
+# Without this, docker commands fail with "no such file /var/run/docker.sock".
+if [[ "${OSTYPE:-}" == msys* || "${OSTYPE:-}" == cygwin* ]]; then
+  export DOCKER_HOST="npipe:////./pipe/docker_engine"
+fi
+
 # ---------------------------------------------------------------------------
 # Docker-compose environment (postgres service needs these)
 # ---------------------------------------------------------------------------
