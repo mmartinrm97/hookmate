@@ -21,11 +21,12 @@ export class HealthController {
   @ApiOperation({ summary: 'Read API health status' })
   @Get('health')
   @HealthCheck()
-  getHealth() {
-    return this.health.check([
+  async getHealth() {
+    const result = await this.health.check([
       () => this.db.pingCheck('database'),
       () => this.memory.checkHeap('memory_heap', 300 * 1024 * 1024),
     ]);
+    return { ...result, service: 'hookmate-api' };
   }
 
   @Public()

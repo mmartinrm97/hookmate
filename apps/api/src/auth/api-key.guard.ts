@@ -1,4 +1,10 @@
-import { CanActivate, ExecutionContext, Inject, Injectable } from '@nestjs/common';
+import {
+  CanActivate,
+  ExecutionContext,
+  Inject,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
 import { IS_PUBLIC_KEY } from './public.decorator';
@@ -37,15 +43,18 @@ export class ApiKeyGuard implements CanActivate {
     const authHeader = request.headers['authorization'];
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return false;
+      throw new UnauthorizedException();
     }
 
     const token = authHeader.slice('Bearer '.length).trim();
 
     if (!token) {
-      return false;
+      throw new UnauthorizedException();
     }
 
-    return this.validKeys.has(token);
+    if (!this.validKeys.has(token)) {
+      throw new UnauthorizedException();
+    }
+    return true;
   }
 }

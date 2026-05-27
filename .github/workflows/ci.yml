@@ -224,6 +224,8 @@ jobs:
     if: github.event_name == 'pull_request'
     needs: [cdk-synth]
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
     env:
       AWS_REGION: us-east-1
     steps:

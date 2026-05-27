@@ -1,4 +1,4 @@
-import { ExecutionContext } from '@nestjs/common';
+import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -48,24 +48,24 @@ describe('ApiKeyGuard', () => {
       expect(guard.canActivate(context)).toBe(true);
     });
 
-    it('returns false for an invalid API key', () => {
+    it('throws UnauthorizedException for an invalid API key', () => {
       const context = createMockExecutionContext('Bearer wrong-key');
-      expect(guard.canActivate(context)).toBe(false);
+      expect(() => guard.canActivate(context)).toThrow(UnauthorizedException);
     });
 
-    it('returns false when Authorization header is missing', () => {
+    it('throws UnauthorizedException when Authorization header is missing', () => {
       const context = createMockExecutionContext(undefined);
-      expect(guard.canActivate(context)).toBe(false);
+      expect(() => guard.canActivate(context)).toThrow(UnauthorizedException);
     });
 
-    it('returns false for empty Authorization header', () => {
+    it('throws UnauthorizedException for empty Authorization header', () => {
       const context = createMockExecutionContext('Bearer ');
-      expect(guard.canActivate(context)).toBe(false);
+      expect(() => guard.canActivate(context)).toThrow(UnauthorizedException);
     });
 
-    it('returns false for malformed Authorization scheme', () => {
+    it('throws UnauthorizedException for malformed Authorization scheme', () => {
       const context = createMockExecutionContext('Basic key-123');
-      expect(guard.canActivate(context)).toBe(false);
+      expect(() => guard.canActivate(context)).toThrow(UnauthorizedException);
     });
   });
 
@@ -92,12 +92,12 @@ describe('ApiKeyGuard', () => {
   });
 
   describe('canActivate with empty API_KEYS', () => {
-    it('rejects all requests when no keys configured', () => {
+    it('throws UnauthorizedException when no keys configured', () => {
       const reflector = new Reflector();
       const guard = new ApiKeyGuard(createMockConfigService(''), reflector);
 
       const context = createMockExecutionContext('Bearer any-key');
-      expect(guard.canActivate(context)).toBe(false);
+      expect(() => guard.canActivate(context)).toThrow(UnauthorizedException);
     });
   });
 
