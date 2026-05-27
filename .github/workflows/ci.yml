@@ -138,6 +138,7 @@ jobs:
       SQS_INGESTION_QUEUE_URL: http://localhost:4566/000000000000/ingestion
       REDIS_HOST: localhost
       REDIS_PORT: 6379
+      API_KEYS: dev-key-123
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
     steps:
       - name: Checkout
