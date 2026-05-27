@@ -19,6 +19,9 @@ process.env['AWS_ENDPOINT_URL'] = process.env['AWS_ENDPOINT_URL'] ?? 'http://loc
 process.env['AWS_REGION'] = process.env['AWS_REGION'] ?? 'us-east-1';
 process.env['AWS_ACCESS_KEY_ID'] = process.env['AWS_ACCESS_KEY_ID'] ?? 'test';
 process.env['AWS_SECRET_ACCESS_KEY'] = process.env['AWS_SECRET_ACCESS_KEY'] ?? 'test';
+process.env['API_KEYS'] = process.env['API_KEYS'] ?? 'dev-key-123';
+
+const authHeader = { Authorization: `Bearer ${process.env['API_KEYS']}` };
 
 interface EndpointPayload {
   id: string;
@@ -72,6 +75,7 @@ e2eSuite('POST /webhooks/:endpointId (e2e)', () => {
     // Arrange: create an active endpoint via the management API
     const createResponse = await request(app.getHttpServer())
       .post('/api/v1/endpoints')
+      .set(authHeader)
       .send({
         name: 'Ingestion e2e test',
         destinationUrl: 'https://example.com/webhook',
@@ -112,6 +116,7 @@ e2eSuite('POST /webhooks/:endpointId (e2e)', () => {
     // Create endpoint
     const createResponse = await request(app.getHttpServer())
       .post('/api/v1/endpoints')
+      .set(authHeader)
       .send({
         name: 'HMAC endpoint',
         destinationUrl: 'https://example.com/hmac',
@@ -144,6 +149,7 @@ e2eSuite('POST /webhooks/:endpointId (e2e)', () => {
     // Create endpoint with secret
     const createResponse = await request(app.getHttpServer())
       .post('/api/v1/endpoints')
+      .set(authHeader)
       .send({
         name: 'HMAC endpoint',
         destinationUrl: 'https://example.com/hmac',
@@ -170,6 +176,7 @@ e2eSuite('POST /webhooks/:endpointId (e2e)', () => {
     // Create endpoint with secret
     const createResponse = await request(app.getHttpServer())
       .post('/api/v1/endpoints')
+      .set(authHeader)
       .send({
         name: 'HMAC endpoint',
         destinationUrl: 'https://example.com/hmac',
@@ -199,6 +206,7 @@ e2eSuite('POST /webhooks/:endpointId (e2e)', () => {
     // Create an endpoint
     const createResponse = await request(app.getHttpServer())
       .post('/api/v1/endpoints')
+      .set(authHeader)
       .send({
         name: 'Pause test endpoint',
         destinationUrl: 'https://example.com/pause-test',
@@ -208,7 +216,10 @@ e2eSuite('POST /webhooks/:endpointId (e2e)', () => {
     const endpoint = createResponse.body as EndpointPayload;
 
     // Pause the endpoint
-    await request(app.getHttpServer()).patch(`/api/v1/endpoints/${endpoint.id}/pause`).expect(200);
+    await request(app.getHttpServer())
+      .patch(`/api/v1/endpoints/${endpoint.id}/pause`)
+      .set(authHeader)
+      .expect(200);
 
     // Act: POST to paused endpoint
     await request(app.getHttpServer())
@@ -231,6 +242,7 @@ e2eSuite('POST /webhooks/:endpointId (e2e)', () => {
       // Create endpoint
       const createResponse = await request(app.getHttpServer())
         .post('/api/v1/endpoints')
+        .set(authHeader)
         .send({
           name: 'SQS test endpoint',
           destinationUrl: 'https://example.com/sqs-test',
