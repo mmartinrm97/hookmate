@@ -179,7 +179,7 @@ jobs:
           PGPASSWORD=hookmate psql -h localhost -p 5432 -U hookmate -d hookmate -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;" || true
 
       - name: Integration tests (e2e)
-        run: pnpm --filter @hookmate/api test:e2e --pool=threads --poolOptions.threads.singleThread=true
+        run: pnpm --filter @hookmate/api test:e2e
 
   cdk-synth:
     name: CDK Synthesize
