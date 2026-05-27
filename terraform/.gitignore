@@ -1,0 +1,7 @@
+# Generated Lambda archives
+*.zip
+
+# Terraform working files
+.terraform/
+*.tfstate.backup
+*.tfplan

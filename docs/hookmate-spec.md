@@ -1230,7 +1230,7 @@ Each criterion is independently verifiable. The audit will check these explicitl
 - [x] `modules/monitoring`: alarms + SNS
 - [x] `modules/frontend`: S3 + CloudFront
 - [x] `terraform/COMPARISON.md` written
-- [ ] `terraform plan` produces clean output
+- [x] `terraform plan` produces clean output
 
 ### Phase I: React dashboard
 
