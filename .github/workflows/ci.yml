@@ -159,8 +159,27 @@ jobs:
       - name: Build shared types
         run: pnpm --filter @hookmate/shared build
 
+      - name: Create SQS queue (Floci)
+        run: |
+          aws sqs create-queue --queue-name ingestion --endpoint-url http://localhost:4566
+          aws sqs create-queue --queue-name dlq --endpoint-url http://localhost:4566
+
+      - name: Wait for Postgres
+        run: |
+          for i in $(seq 1 30); do
+            if pg_isready -h localhost -p 5432 -U hookmate; then
+              echo "Postgres is ready"
+              break
+            fi
+            sleep 1
+          done
+
+      - name: Clean database schema
+        run: |
+          PGPASSWORD=hookmate psql -h localhost -p 5432 -U hookmate -d hookmate -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;" || true
+
       - name: Integration tests (e2e)
-        run: pnpm --filter @hookmate/api test:e2e
+        run: pnpm --filter @hookmate/api test:e2e --sequence.concurrent=false
 
   cdk-synth:
     name: CDK Synthesize
@@ -184,6 +203,9 @@ jobs:
 
       - name: Build shared types
         run: pnpm --filter @hookmate/shared build
+
+      - name: Build API (Lambda asset)
+        run: pnpm --filter @hookmate/api build
 
       - name: CDK Synth
         run: pnpm infra:synth
