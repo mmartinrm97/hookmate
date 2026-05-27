@@ -10,9 +10,10 @@ WITH_CDK="${1:-}"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT"
 
-# On Windows (Git Bash / MINGW), Docker Desktop uses a named pipe.
-# Without this, docker commands fail with "no such file /var/run/docker.sock".
-if [[ "${OSTYPE:-}" == msys* || "${OSTYPE:-}" == cygwin* ]]; then
+# On Windows, Docker Desktop uses a named pipe instead of a Unix socket.
+# If /var/run/docker.sock doesn't exist, fall back to the named pipe so
+# docker commands work from Git Bash or PowerShell on Windows.
+if ! [ -S /var/run/docker.sock ]; then
   export DOCKER_HOST="npipe:////./pipe/docker_engine"
 fi
 
