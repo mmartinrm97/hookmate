@@ -120,7 +120,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
       floci:
-        image: hectorvent/floci:latest
+        image: hectorvent/floci:1.5.19
         ports:
           - 4566:4566
         env:
@@ -289,10 +289,9 @@ jobs:
     name: CDK Deploy + Drift Check (Floci)
     needs: [quality, cdk-synth]
     runs-on: ubuntu-latest
-    continue-on-error: true
     services:
       floci:
-        image: hectorvent/floci:latest
+        image: hectorvent/floci:1.5.19
         ports:
           - 4566:4566
         env:
