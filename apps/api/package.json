@@ -20,7 +20,10 @@
     "test:watch": "vitest",
     "test:cov": "vitest run --coverage",
     "test:e2e": "vitest run --config ./test/vitest-e2e.config.ts",
-    "seed": "ts-node scripts/seed.ts"
+    "seed": "ts-node scripts/seed.ts",
+    "migration:run": "typeorm-ts-node-esm migration:run -d src/database/data-source.ts",
+    "migration:revert": "typeorm-ts-node-esm migration:revert -d src/database/data-source.ts",
+    "migration:generate": "typeorm-ts-node-esm migration:generate -d src/database/data-source.ts"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.65",
