@@ -36,9 +36,17 @@ describe('AppConfigService', () => {
         username: 'hookmate',
         password: 'hookmate',
         database: 'hookmate',
-        synchronize: true,
+        synchronize: false,
         logging: false,
       });
+    });
+
+    it('enables synchronize when NODE_ENV is test', () => {
+      const mockConfigService = createMockConfigService({ NODE_ENV: 'test' });
+      const service = new AppConfigService(mockConfigService);
+      const config = service.getDatabaseConfig();
+
+      expect(config.synchronize).toBe(true);
     });
 
     it('reads custom host and port from environment variables', () => {
