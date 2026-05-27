@@ -37,8 +37,8 @@ export class ApiStack extends Stack {
     // It serves all management API routes (endpoints CRUD, event log, DLQ controls, etc.)
     this.apiHandlerLambda = new Function(this, 'ApiHandlerFunction', {
       runtime: Runtime.NODEJS_20_X,
-      code: Code.fromAsset('../apps/api/dist'),
-      handler: 'index.handler',
+      code: Code.fromAsset('../apps/api/dist/src'),
+      handler: 'lambda/index.handler',
       memorySize: 256,
       timeout: Duration.seconds(30),
       tracing: Tracing.ACTIVE,
