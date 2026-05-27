@@ -1,11 +1,11 @@
-import { type JSX, useState } from 'react';
 import type { HookMateDlqEvent, PaginatedResponse } from '@hookmate/shared';
-import { Button } from '../ui/button.js';
-import { Skeleton } from '../ui/skeleton.js';
-import { Icons } from '../ui/icons.js';
-import { formatRelativeTime } from '../../lib/utils.js';
-import { dlqApi } from '../../lib/api.js';
-import { useToast } from '../../stores/toast-store.js';
+import { type JSX, useState } from 'react';
+import { dlqApi } from '../../lib/api';
+import { formatRelativeTime } from '../../lib/utils';
+import { useToast } from '../../stores/toast-store';
+import { Button } from '../ui/button';
+import { Icons } from '../ui/icons';
+import { Skeleton } from '../ui/skeleton';
 
 interface DlqTableProps {
   data: PaginatedResponse<HookMateDlqEvent> | undefined;
@@ -23,7 +23,7 @@ export function DlqTable({ data, isLoading, onRefresh }: DlqTableProps): JSX.Ele
 
   if (isLoading) return <DlqTableSkeleton />;
 
-  if (!data || data.items.length === 0) {
+  if (!data || !data.items || data.items.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-16 px-4">
         <div className="mb-4 rounded-full bg-muted p-4">
@@ -94,7 +94,7 @@ export function DlqTable({ data, isLoading, onRefresh }: DlqTableProps): JSX.Ele
             variant="outline"
             size="sm"
             onClick={() => setShowRetryAllConfirm(true)}
-            disabled={data.items.length === 0}
+            disabled={data?.items?.length === 0}
           >
             <Icons.Play size={16} />
             Retry All
@@ -103,7 +103,7 @@ export function DlqTable({ data, isLoading, onRefresh }: DlqTableProps): JSX.Ele
             variant="destructive"
             size="sm"
             onClick={() => setShowPurgeConfirm(true)}
-            disabled={data.items.length === 0}
+            disabled={data?.items?.length === 0}
           >
             <Icons.Trash2 size={16} />
             Purge DLQ

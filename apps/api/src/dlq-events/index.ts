@@ -1,3 +1,4 @@
+export { DlqAlertService } from './dlq-alert.service';
 export { DlqEventsController } from './dlq-events.controller';
 export {
   type DlqRetryAllResult,

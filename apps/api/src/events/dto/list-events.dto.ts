@@ -34,4 +34,12 @@ export class ListEventsDto {
   @Min(1)
   @Max(100)
   limit?: number = 50;
+
+  @IsOptional()
+  @IsIn(['receivedAt', 'status', 'category', 'endpointId'])
+  sortBy?: string;
+
+  @IsOptional()
+  @IsIn(['asc', 'desc'])
+  sortDirection?: 'asc' | 'desc';
 }

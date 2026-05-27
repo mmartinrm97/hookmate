@@ -1,13 +1,13 @@
+import type { HookMateDeliveryAttempt, HookMateEvent, PaginatedResponse } from '@hookmate/shared';
 import { type JSX } from 'react';
-import type { HookMateEvent, HookMateDeliveryAttempt, PaginatedResponse } from '@hookmate/shared';
-import type { EventsFilterState, EventSortState } from '../../types/api.js';
-import { Badge } from '../ui/badge.js';
-import { Button } from '../ui/button.js';
-import { Input } from '../ui/input.js';
-import { Select, SelectItem } from '../ui/select.js';
-import { Skeleton } from '../ui/skeleton.js';
-import { Icons } from '../ui/icons.js';
-import { formatDateTime, formatRelativeTime } from '../../lib/utils.js';
+import { formatDateTime, formatRelativeTime } from '../../lib/utils';
+import type { EventsFilterState, EventSortState } from '../../types/api';
+import { Badge } from '../ui/badge';
+import { Button } from '../ui/button';
+import { Icons } from '../ui/icons';
+import { Input } from '../ui/input';
+import { Select, SelectItem } from '../ui/select';
+import { Skeleton } from '../ui/skeleton';
 
 // ─── Event Filters ───────────────────────────────────────────────
 
@@ -126,7 +126,7 @@ export function EventsTable({
     return <EventsTableSkeleton />;
   }
 
-  if (!data || data.items.length === 0) {
+  if (!data || !data.items || data.items.length === 0) {
     return <EventsEmptyState />;
   }
 

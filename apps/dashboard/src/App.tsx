@@ -1,12 +1,13 @@
-import { type JSX } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AppShell } from './components/layout/AppShell.js';
-import { EndpointsPage } from './pages/EndpointsPage.js';
-import { EventsPage } from './pages/EventsPage.js';
-import { DlqPage } from './pages/DlqPage.js';
-import { SummariesPage } from './pages/SummariesPage.js';
-import { MetricsPage } from './pages/MetricsPage.js';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { type JSX } from 'react';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { AppShell } from './components/layout/AppShell';
+import { DlqPage } from './pages/DlqPage';
+import { EndpointsPage } from './pages/EndpointsPage';
+import { EventsPage } from './pages/EventsPage';
+import { MetricsPage } from './pages/MetricsPage';
+import { SummariesPage } from './pages/SummariesPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -34,6 +35,7 @@ export default function App(): JSX.Element {
           </Route>
         </Routes>
       </BrowserRouter>
+      <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   );
 }

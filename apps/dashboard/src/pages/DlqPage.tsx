@@ -1,7 +1,7 @@
-import { type JSX, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { dlqApi } from '../lib/api.js';
-import { DlqTable } from '../components/dlq/index.js';
+import { type JSX, useState } from 'react';
+import { DlqTable } from '../components/dlq/index';
+import { dlqApi } from '../lib/api';
 
 export function DlqPage(): JSX.Element {
   const queryClient = useQueryClient();

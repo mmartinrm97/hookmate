@@ -7,5 +7,9 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     include: ['test/**/*.e2e-spec.ts'],
+    fileParallelism: false,
+    sequence: {
+      concurrent: false,
+    },
   },
 });

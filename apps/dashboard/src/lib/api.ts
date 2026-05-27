@@ -1,21 +1,21 @@
 import type {
-  HookMateEndpoint,
-  HookMateEvent,
-  HookMateDlqEvent,
   HookMateAiSummary,
   HookMateDeliveryAttempt,
+  HookMateDlqEvent,
+  HookMateEndpoint,
+  HookMateEvent,
   PaginatedResponse,
 } from '@hookmate/shared';
 import type {
-  EndpointWithStats,
   CreateEndpointFormData,
-  UpdateEndpointFormData,
+  EndpointMetrics,
+  EndpointWithStats,
   EventsFilterState,
   EventSortState,
   MetricsSnapshot,
   TimeSeriesPoint,
-  EndpointMetrics,
-} from '../types/api.js';
+  UpdateEndpointFormData,
+} from '../types/api';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 

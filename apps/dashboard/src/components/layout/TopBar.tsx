@@ -1,7 +1,7 @@
 import { type JSX } from 'react';
-import { useUiStore } from '../../stores/ui-store.js';
-import { Icons } from '../ui/icons.js';
-import { Button } from '../ui/button.js';
+import { useUiStore } from '../../stores/ui-store';
+import { Button } from '../ui/button';
+import { Icons } from '../ui/icons';
 
 export function TopBar(): JSX.Element {
   const darkMode = useUiStore((s) => s.darkMode);

@@ -1,12 +1,12 @@
 import { type JSX, useState } from 'react';
-import type { SummaryWithEndpoint } from '../../types/api.js';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card.js';
-import { Badge } from '../ui/badge.js';
-import { Button } from '../ui/button.js';
-import { Icons } from '../ui/icons.js';
-import { formatDateTime, formatNumber } from '../../lib/utils.js';
-import { summariesApi } from '../../lib/api.js';
-import { useToast } from '../../stores/toast-store.js';
+import { summariesApi } from '../../lib/api';
+import { formatDateTime, formatNumber } from '../../lib/utils';
+import { useToast } from '../../stores/toast-store';
+import type { SummaryWithEndpoint } from '../../types/api';
+import { Badge } from '../ui/badge';
+import { Button } from '../ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Icons } from '../ui/icons';
 
 interface SummaryListProps {
   summaries: SummaryWithEndpoint[];

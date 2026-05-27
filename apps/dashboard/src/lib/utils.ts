@@ -1,4 +1,4 @@
-export { cn } from './cn.js';
+export { cn } from './cn';
 
 /**
  * Format a date string to a localized date-time string.

@@ -1,10 +1,10 @@
-import { type JSX, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { endpointsApi } from '../lib/api.js';
-import { EndpointsTable, CreateEndpointDialog } from '../components/endpoints/index.js';
-import { Button } from '../components/ui/button.js';
-import { Icons } from '../components/ui/icons.js';
-import { useToast } from '../stores/toast-store.js';
+import { type JSX, useState } from 'react';
+import { CreateEndpointDialog, EndpointsTable } from '../components/endpoints/index';
+import { Button } from '../components/ui/button';
+import { Icons } from '../components/ui/icons';
+import { endpointsApi } from '../lib/api';
+import { useToast } from '../stores/toast-store';
 
 export function EndpointsPage(): JSX.Element {
   const queryClient = useQueryClient();

@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import axios from 'axios';
+import { getTracer, OtelAttributes } from '../telemetry/telemetry';
 import type { DeliveryResult } from './processor.types';
 
 @Injectable()
@@ -13,42 +14,70 @@ export class DeliveryService {
     payload: Record<string, unknown>,
     eventId: string,
   ): Promise<DeliveryResult> {
-    const start = Date.now();
+    const tracer = getTracer();
 
-    try {
-      const response = await axios.post(destinationUrl, payload, {
-        headers: {
-          'Content-Type': 'application/json',
-          'X-HookMate-Event-Id': eventId,
-        },
-        timeout: 10_000,
-      });
+    return tracer.startActiveSpan('hookmate.delivery.attempt', async (span) => {
+      span.setAttribute(OtelAttributes.DELIVERY_URL, destinationUrl);
+      span.setAttribute(OtelAttributes.EVENT_ID, eventId);
 
-      const latencyMs = Date.now() - start;
-      const responseBody = this.truncateResponse(response.data);
+      const start = Date.now();
 
-      return {
-        status: response.status >= 200 && response.status < 300 ? 'success' : 'failed',
-        httpStatus: response.status,
-        latencyMs,
-        responseBody,
-      };
-    } catch (error) {
-      const latencyMs = Date.now() - start;
+      try {
+        const response = await axios.post(destinationUrl, payload, {
+          headers: {
+            'Content-Type': 'application/json',
+            'X-HookMate-Event-Id': eventId,
+          },
+          timeout: 10_000,
+        });
 
-      const axiosError = error as { code?: string; response?: { status?: number } };
+        const latencyMs = Date.now() - start;
+        const responseBody = this.truncateResponse(response.data);
+        const status =
+          response.status >= 200 && response.status < 300
+            ? ('success' as const)
+            : ('failed' as const);
 
-      if (axiosError.code === 'ECONNABORTED') {
-        return { status: 'timeout', httpStatus: null, latencyMs, responseBody: null };
+        span.setAttribute(OtelAttributes.DELIVERY_STATUS, status);
+        if (response.status) {
+          span.setAttribute('http.status_code', response.status);
+        }
+        span.setAttribute('http.response_time_ms', latencyMs);
+
+        return {
+          status,
+          httpStatus: response.status,
+          latencyMs,
+          responseBody,
+        };
+      } catch (error) {
+        const latencyMs = Date.now() - start;
+
+        const axiosError = error as { code?: string; response?: { status?: number } };
+
+        if (axiosError.code === 'ECONNABORTED') {
+          span.setAttribute(OtelAttributes.DELIVERY_STATUS, 'timeout');
+          span.recordException(new Error('Delivery timeout'));
+          return { status: 'timeout' as const, httpStatus: null, latencyMs, responseBody: null };
+        }
+
+        const httpStatus = axiosError.response?.status ?? null;
+        span.setAttribute(OtelAttributes.DELIVERY_STATUS, 'failed');
+        if (httpStatus) {
+          span.setAttribute('http.status_code', httpStatus);
+        }
+        span.recordException(error as Error);
+
+        return {
+          status: 'failed' as const,
+          httpStatus,
+          latencyMs,
+          responseBody: null,
+        };
+      } finally {
+        span.end();
       }
-
-      return {
-        status: 'failed',
-        httpStatus: axiosError.response?.status ?? null,
-        latencyMs,
-        responseBody: null,
-      };
-    }
+    });
   }
 
   private truncateResponse(data: unknown): string | null {

@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { TypeOrmModuleOptions } from '@nestjs/typeorm';
+import { SnakeCaseNamingStrategy } from '../../database/naming-strategy';
 import type { Env } from './env.schema';
 
 export interface AppRuntimeConfig {
@@ -37,6 +38,7 @@ export class AppConfigService {
   }
 
   getDatabaseConfig(): TypeOrmModuleOptions {
+    const isTest = this.configService.get('NODE_ENV') === 'test';
     return {
       type: 'postgres',
       host: this.configService.get('POSTGRES_HOST'),
@@ -44,7 +46,8 @@ export class AppConfigService {
       username: this.configService.get('POSTGRES_USER'),
       password: this.configService.get('POSTGRES_PASSWORD'),
       database: this.configService.get('POSTGRES_DB'),
-      synchronize: true,
+      synchronize: isTest,
+      namingStrategy: new SnakeCaseNamingStrategy(),
       logging: false,
       autoLoadEntities: true,
     };

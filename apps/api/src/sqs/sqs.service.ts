@@ -2,6 +2,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { SQSClient } from '@aws-sdk/client-sqs';
 import {
   DeleteMessageCommand,
+  GetQueueAttributesCommand,
   ReceiveMessageCommand,
   SendMessageCommand,
 } from '@aws-sdk/client-sqs';
@@ -91,6 +92,35 @@ export class SqsService {
         `Failed to delete SQS message: ${(error as Error).message}`,
         (error as Error).stack,
       );
+    }
+  }
+
+  async getQueueDepth(): Promise<{ visible: number; invisible: number; delayed: number }> {
+    try {
+      const command = new GetQueueAttributesCommand({
+        QueueUrl: this.queueUrl,
+        AttributeNames: [
+          'ApproximateNumberOfMessages',
+          'ApproximateNumberOfMessagesNotVisible',
+          'ApproximateNumberOfMessagesDelayed',
+        ],
+      });
+
+      const result = await this.sqsClient.send(command);
+      const attrs = result.Attributes ?? {};
+
+      return {
+        visible: Number(attrs.ApproximateNumberOfMessages ?? 0),
+        invisible: Number(attrs.ApproximateNumberOfMessagesNotVisible ?? 0),
+        delayed: Number(attrs.ApproximateNumberOfMessagesDelayed ?? 0),
+      };
+    } catch (error) {
+      this.logger.error(
+        `Failed to get SQS queue depth: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
+
+      return { visible: 0, invisible: 0, delayed: 0 };
     }
   }
 }

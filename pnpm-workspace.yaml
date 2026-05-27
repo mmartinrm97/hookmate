@@ -48,6 +48,7 @@ allowBuilds:
   '@swc/core': true
   esbuild: true
   msgpackr-extract: true
+  protobufjs: true
 
 catalog:
   '@types/node': ^25.0.0

@@ -1,9 +1,9 @@
 import { type JSX, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
-import { useUiStore } from '../../stores/ui-store.js';
-import { ToastContainer } from '../ui/toast.js';
-import { Sidebar } from './Sidebar.js';
-import { TopBar } from './TopBar.js';
+import { useUiStore } from '../../stores/ui-store';
+import { ToastContainer } from '../ui/toast';
+import { Sidebar } from './Sidebar';
+import { TopBar } from './TopBar';
 
 export function AppShell(): JSX.Element {
   const darkMode = useUiStore((s) => s.darkMode);

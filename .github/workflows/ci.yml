@@ -1,30 +1,47 @@
-name: CI
+# HookMate CI/CD Pipeline
+#
+# Branch protection rule to configure in GitHub repo settings:
+#   - Require status checks before merging
+#   - Status checks: "Quality Checks", "Unit Tests", "Integration Tests", "CDK Synthesize"
+#   - Require branches to be up to date
+#
+# Trigger map:
+#   push (main):   full pipeline → deploy
+#   PR (main):     full pipeline → CDK diff comment (no deploy)
+#   push (other):  not triggered
+
+name: CI/CD
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main]
   pull_request:
-    branches: [main, develop]
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '22'
 
 jobs:
-  ci:
-    name: Lint, Test & Build
+  quality:
+    name: Quality Checks
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 11.1.1
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
-          cache: 'pnpm'
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -50,8 +67,339 @@ jobs:
       - name: Format check
         run: pnpm format:check
 
-      - name: Test
-        run: pnpm test
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Build
-        run: pnpm build
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build shared types
+        run: pnpm --filter @hookmate/shared build
+
+      - name: Unit tests
+        run: pnpm test:unit
+
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: hookmate
+          POSTGRES_PASSWORD: hookmate
+          POSTGRES_DB: hookmate
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U hookmate"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      floci:
+        image: floci/floci:1.5.19
+        ports:
+          - 4566:4566
+        env:
+          FLOCI_DEFAULT_REGION: us-east-1
+    env:
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: hookmate
+      POSTGRES_PASSWORD: hookmate
+      POSTGRES_DB: hookmate
+      AWS_ENDPOINT_URL: http://localhost:4566
+      AWS_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      SQS_INGESTION_QUEUE_URL: http://localhost:4566/000000000000/ingestion
+      REDIS_HOST: localhost
+      REDIS_PORT: 6379
+      API_KEYS: dev-key-123
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build shared types
+        run: pnpm --filter @hookmate/shared build
+
+      - name: Create SQS queue (Floci)
+        run: |
+          aws sqs create-queue --queue-name ingestion --endpoint-url http://localhost:4566
+          aws sqs create-queue --queue-name dlq --endpoint-url http://localhost:4566
+
+      - name: Wait for Postgres
+        run: |
+          for i in $(seq 1 30); do
+            if pg_isready -h localhost -p 5432 -U hookmate; then
+              echo "Postgres is ready"
+              break
+            fi
+            sleep 1
+          done
+
+      - name: Clean database schema
+        run: |
+          PGPASSWORD=hookmate psql -h localhost -p 5432 -U hookmate -d hookmate -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;" || true
+
+      - name: Integration tests (e2e)
+        run: pnpm --filter @hookmate/api test:e2e
+
+  cdk-synth:
+    name: CDK Synthesize
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build shared types
+        run: pnpm --filter @hookmate/shared build
+
+      - name: Build API (Lambda asset)
+        run: pnpm --filter @hookmate/api build
+
+      - name: CDK Synth
+        run: pnpm infra:synth
+        env:
+          AWS_REGION: us-east-1
+
+      - name: Upload CDK output
+        uses: actions/upload-artifact@v4
+        with:
+          name: cdk-out
+          path: infrastructure/cdk.out/
+          retention-days: 3
+
+  cdk-diff:
+    name: CDK Diff
+    if: github.event_name == 'pull_request'
+    needs: [cdk-synth]
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    env:
+      AWS_REGION: us-east-1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build infrastructure
+        run: pnpm --filter @hookmate/infrastructure build
+
+      - name: CDK Diff
+        id: diff
+        continue-on-error: true
+        run: |
+          cd infrastructure
+          cdk diff --all 2>&1 | tee ../cdk-diff-output.txt || true
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Comment CDK diff on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const diffPath = '${{ github.workspace }}/cdk-diff-output.txt';
+            let diffOutput = '(no diff output)';
+            if (fs.existsSync(diffPath)) {
+              diffOutput = fs.readFileSync(diffPath, 'utf8').trim();
+            }
+            // Truncate if too long (GitHub comment limit is 65536 chars)
+            const maxLen = 60000;
+            if (diffOutput.length > maxLen) {
+              diffOutput = diffOutput.substring(0, maxLen) + '\n\n… _(diff truncated due to length)_';
+            }
+            const body = diffOutput
+              ? `## CDK Diff\n\n\`\`\`diff\n${diffOutput}\n\`\`\``
+              : '## CDK Diff\n\nNo infrastructure changes detected.';
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body,
+            });
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  cdk-deploy-diff:
+    name: CDK Deploy + Drift Check (Floci)
+    needs: [quality, cdk-synth]
+    runs-on: ubuntu-latest
+    services:
+      floci:
+        image: floci/floci:1.5.19
+        ports:
+          - 4566:4566
+        env:
+          FLOCI_DEFAULT_REGION: us-east-1
+          FLOCI_STORAGE_MODE: memory
+    env:
+      AWS_ENDPOINT_URL: http://localhost:4566
+      AWS_DEFAULT_REGION: us-east-1
+      AWS_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build shared types
+        run: pnpm --filter @hookmate/shared build
+
+      - name: Build API (Lambda asset)
+        run: pnpm --filter @hookmate/api build
+
+      - name: Build infrastructure
+        run: pnpm --filter @hookmate/infrastructure build
+
+      - name: CDK Bootstrap (Floci)
+        run: cd infrastructure && npx cdk bootstrap aws://000000000000/us-east-1
+
+      - name: CDK Deploy (Floci)
+        run: cd infrastructure && npx cdk deploy --all --require-approval never
+
+      - name: CDK Diff — assert no drift
+        run: cd infrastructure && npx cdk diff --all --fail
+
+  deploy:
+    name: Deploy
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs:
+      - quality
+      - unit-tests
+      - integration-tests
+      - cdk-synth
+      - cdk-deploy-diff
+    runs-on: ubuntu-latest
+    env:
+      AWS_REGION: us-east-1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build infrastructure
+        run: pnpm --filter @hookmate/infrastructure build
+
+      - name: CDK Deploy
+        run: |
+          cd infrastructure
+          cdk deploy --all --require-approval never
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Build dashboard
+        run: pnpm --filter @hookmate/dashboard build
+        env:
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL || 'https://api.hookmate.dev' }}
+
+      - name: Deploy dashboard to S3
+        run: |
+          aws s3 sync apps/dashboard/dist s3://${{ vars.DASHBOARD_BUCKET }} --delete --cache-control "public,max-age=31536000,immutable"
+          # HTML files should not be cached aggressively
+          aws s3 cp apps/dashboard/dist/index.html s3://${{ vars.DASHBOARD_BUCKET }}/index.html --cache-control "public,max-age=0,must-revalidate"
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: us-east-1
+
+      - name: Invalidate CloudFront cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ vars.CLOUDFRONT_DISTRIBUTION_ID }} \
+            --paths "/*"
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: us-east-1

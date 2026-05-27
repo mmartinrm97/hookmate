@@ -1,17 +1,19 @@
-import { type JSX, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { metricsApi } from '../lib/api.js';
+import { type JSX, useState } from 'react';
 import {
+  DeliveryLatencyChart,
+  ErrorRateChart,
   MetricsCards,
   QueueDepthChart,
   StatusPieChart,
-  DeliveryLatencyChart,
-  ErrorRateChart,
-} from '../components/metrics/index.js';
-import { Select, SelectItem } from '../components/ui/select.js';
+} from '../components/metrics/index';
+import { useQueueDepthSse } from '../hooks/use-queue-depth-sse';
+import { Select, SelectItem } from '../components/ui/select';
+import { metricsApi } from '../lib/api';
 
 export function MetricsPage(): JSX.Element {
   const [timeRange, setTimeRange] = useState('24');
+  const { depth: liveDepth, connected: sseConnected } = useQueueDepthSse();
 
   const { data: snapshot, isLoading: snapshotLoading } = useQuery({
     queryKey: ['metrics', 'snapshot'],
@@ -47,7 +49,15 @@ export function MetricsPage(): JSX.Element {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Metrics</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold tracking-tight">Metrics</h1>
+            {sseConnected && liveDepth != null && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Live: {liveDepth.visible} pending
+              </span>
+            )}
+          </div>
           <p className="text-sm text-muted-foreground mt-1">
             System-wide performance and health metrics.
           </p>

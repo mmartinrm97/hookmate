@@ -1,8 +1,8 @@
-import { type JSX } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { summariesApi, endpointsApi } from '../lib/api.js';
-import { SummaryList } from '../components/summaries/index.js';
-import type { SummaryWithEndpoint } from '../types/api.js';
+import { type JSX } from 'react';
+import { SummaryList } from '../components/summaries/index';
+import { endpointsApi, summariesApi } from '../lib/api';
+import type { SummaryWithEndpoint } from '../types/api';
 
 export function SummariesPage(): JSX.Element {
   const queryClient = useQueryClient();

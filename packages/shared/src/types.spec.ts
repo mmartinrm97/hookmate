@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 // ---------------------------------------------------------------------------
 // Type-export verification: these tests ensure all symbols compile and
@@ -13,7 +13,7 @@ describe('HookMateEvent types', () => {
   });
 
   it('constructs a minimal HookMateEvent', () => {
-    const event: import('./event.types.js').HookMateEvent = {
+    const event: import('./event.types').HookMateEvent = {
       id: '01J01ABCDEFGHIJKLMNOPQRST',
       endpointId: '01J01ABCDEFGHIJKLMNOPQRSU',
       payload: { hello: 'world' },
@@ -30,7 +30,7 @@ describe('HookMateEvent types', () => {
   });
 
   it('constructs a fully populated HookMateEvent', () => {
-    const event: import('./event.types.js').HookMateEvent = {
+    const event: import('./event.types').HookMateEvent = {
       id: '01J01ABCDEFGHIJKLMNOPQRST',
       endpointId: '01J01ABCDEFGHIJKLMNOPQRSU',
       payload: { data: 42 },
@@ -55,7 +55,7 @@ describe('HookMateDeliveryAttempt types', () => {
   });
 
   it('constructs a HookMateDeliveryAttempt', () => {
-    const attempt: import('./delivery-attempt.types.js').HookMateDeliveryAttempt = {
+    const attempt: import('./delivery-attempt.types').HookMateDeliveryAttempt = {
       id: 1,
       eventId: '01J01ABCDEFGHIJKLMNOPQRST',
       attemptNumber: 1,
@@ -71,7 +71,7 @@ describe('HookMateDeliveryAttempt types', () => {
   });
 
   it('constructs a HookMateDeliveryAttempt with nullable fields as null', () => {
-    const attempt: import('./delivery-attempt.types.js').HookMateDeliveryAttempt = {
+    const attempt: import('./delivery-attempt.types').HookMateDeliveryAttempt = {
       id: 2,
       eventId: '01J01ABCDEFGHIJKLMNOPQRST',
       attemptNumber: 3,
@@ -89,7 +89,7 @@ describe('HookMateDeliveryAttempt types', () => {
 
 describe('HookMateDlqEvent types', () => {
   it('constructs a HookMateDlqEvent', () => {
-    const dlq: import('./dlq-event.types.js').HookMateDlqEvent = {
+    const dlq: import('./dlq-event.types').HookMateDlqEvent = {
       id: '01J01ABCDEFGHIJKLMNOPQRST',
       eventId: '01J01ABCDEFGHIJKLMNOPQRSU',
       endpointId: '01J01ABCDEFGHIJKLMNOPQRSV',
@@ -106,7 +106,7 @@ describe('HookMateDlqEvent types', () => {
 
 describe('PaginatedResponse type', () => {
   it('constructs a PaginatedResponse with items', () => {
-    const response: import('./pagination.types.js').PaginatedResponse<{ id: string }> = {
+    const response: import('./pagination.types').PaginatedResponse<{ id: string }> = {
       items: [{ id: '1' }, { id: '2' }],
       total: 2,
       page: 1,
@@ -119,7 +119,7 @@ describe('PaginatedResponse type', () => {
   });
 
   it('constructs PaginatedResponse with empty items array', () => {
-    const response: import('./pagination.types.js').PaginatedResponse<number> = {
+    const response: import('./pagination.types').PaginatedResponse<number> = {
       items: [],
       total: 0,
       page: 1,
@@ -132,13 +132,13 @@ describe('PaginatedResponse type', () => {
 
 describe('QueryParams interface', () => {
   it('constructs QueryParams with defaults', () => {
-    const params: import('./pagination.types.js').QueryParams = {};
+    const params: import('./pagination.types').QueryParams = {};
     expect(params.page).toBeUndefined();
     expect(params.limit).toBeUndefined();
   });
 
   it('constructs QueryParams with page and limit', () => {
-    const params: import('./pagination.types.js').QueryParams = {
+    const params: import('./pagination.types').QueryParams = {
       page: 2,
       limit: 25,
     };
@@ -149,7 +149,7 @@ describe('QueryParams interface', () => {
 
 describe('UpdateHookMateEndpointInput type', () => {
   it('constructs with partial fields', () => {
-    const input: import('./endpoint.types.js').UpdateHookMateEndpointInput = {
+    const input: import('./endpoint.types').UpdateHookMateEndpointInput = {
       name: 'Updated name',
     };
     expect(input.name).toBe('Updated name');
@@ -157,7 +157,7 @@ describe('UpdateHookMateEndpointInput type', () => {
   });
 
   it('accepts all optional fields', () => {
-    const input: import('./endpoint.types.js').UpdateHookMateEndpointInput = {
+    const input: import('./endpoint.types').UpdateHookMateEndpointInput = {
       name: 'Updated',
       destinationUrl: 'https://example.com/updated',
       maxRetries: 3,
@@ -172,7 +172,7 @@ describe('UpdateHookMateEndpointInput type', () => {
 
 describe('CreateHookMateRoutingRuleInput type', () => {
   it('constructs with all fields', () => {
-    const input: import('./routing-rule.types.js').CreateHookMateRoutingRuleInput = {
+    const input: import('./routing-rule.types').CreateHookMateRoutingRuleInput = {
       priority: 10,
       matchType: 'header',
       matchKey: 'X-Region',
@@ -185,7 +185,7 @@ describe('CreateHookMateRoutingRuleInput type', () => {
   });
 
   it('constructs with minimum fields', () => {
-    const input: import('./routing-rule.types.js').CreateHookMateRoutingRuleInput = {
+    const input: import('./routing-rule.types').CreateHookMateRoutingRuleInput = {
       priority: 1,
       matchType: 'source_ip',
     };
@@ -204,7 +204,7 @@ describe('HookMateRoutingRule types', () => {
   });
 
   it('constructs a HookMateRoutingRule', () => {
-    const rule: import('./routing-rule.types.js').HookMateRoutingRule = {
+    const rule: import('./routing-rule.types').HookMateRoutingRule = {
       id: 1,
       endpointId: '01J01ABCDEFGHIJKLMNOPQRST',
       priority: 10,
@@ -222,7 +222,7 @@ describe('HookMateRoutingRule types', () => {
 
 describe('HookMateAiSummary types', () => {
   it('constructs a HookMateAiSummary', () => {
-    const summary: import('./ai-summary.types.js').HookMateAiSummary = {
+    const summary: import('./ai-summary.types').HookMateAiSummary = {
       id: 1,
       endpointId: '01J01ABCDEFGHIJKLMNOPQRST',
       periodStart: '2025-01-01T00:00:00Z',
@@ -239,7 +239,7 @@ describe('HookMateAiSummary types', () => {
   });
 
   it('constructs a HookMateAiSummary with nullable fields as null', () => {
-    const summary: import('./ai-summary.types.js').HookMateAiSummary = {
+    const summary: import('./ai-summary.types').HookMateAiSummary = {
       id: 2,
       endpointId: '01J01ABCDEFGHIJKLMNOPQRST',
       periodStart: '2025-01-01T00:00:00Z',
@@ -259,23 +259,23 @@ describe('HookMateAiSummary types', () => {
 describe('index.ts barrel exports', () => {
   it('re-exports all type symbols (verifiable by name)', async () => {
     // Dynamic import ensures the barrel resolves correctly.
-    const mod = await import('./index.js');
+    const mod = await import('./index');
     expect(mod).toBeDefined();
   });
 
   it('re-exports PaginatedResponse and QueryParams', async () => {
-    const mod = await import('./pagination.types.js');
+    const mod = await import('./pagination.types');
     expect(mod).toBeDefined();
   });
 
   it('re-exports UpdateHookMateEndpointInput', async () => {
-    const mod = (await import('./endpoint.types.js')) as Record<string, unknown>;
+    const mod = (await import('./endpoint.types')) as Record<string, unknown>;
     expect(mod.UpdateHookMateEndpointInput).toBeUndefined(); // type-only, no runtime value
     expect(mod).toBeDefined();
   });
 
   it('re-exports CreateHookMateRoutingRuleInput', async () => {
-    const mod = await import('./routing-rule.types.js');
+    const mod = await import('./routing-rule.types');
     expect(mod).toBeDefined();
   });
 });

@@ -1,6 +1,6 @@
 import { type JSX } from 'react';
-import { useToastStore } from '../../stores/toast-store.js';
-import { cn } from '../../lib/cn.js';
+import { cn } from '../../lib/cn';
+import { useToastStore } from '../../stores/toast-store';
 
 export function ToastContainer(): JSX.Element {
   const toasts = useToastStore((s) => s.toasts);

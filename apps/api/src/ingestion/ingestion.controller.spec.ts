@@ -18,6 +18,7 @@ describe('IngestionController', () => {
   let mockFastifyInstance: {
     post: ReturnType<typeof vi.fn>;
     addContentTypeParser: ReturnType<typeof vi.fn>;
+    addHook: ReturnType<typeof vi.fn>;
   };
   let mockHttpAdapterHost: {
     httpAdapter: {
@@ -32,6 +33,7 @@ describe('IngestionController', () => {
     mockFastifyInstance = {
       post: vi.fn(),
       addContentTypeParser: vi.fn(),
+      addHook: vi.fn(),
     };
     mockHttpAdapterHost = {
       httpAdapter: {
@@ -51,23 +53,20 @@ describe('IngestionController', () => {
   });
 
   describe('onApplicationBootstrap', () => {
-    it('registers a POST route at /webhooks/:endpointId', () => {
+    it('registers a POST route at /webhooks/:endpointId with bodyLimit', () => {
       controller.onApplicationBootstrap();
 
       expect(mockFastifyInstance.post).toHaveBeenCalledWith(
         '/webhooks/:endpointId',
+        { bodyLimit: 10_485_760 },
         expect.any(Function),
       );
     });
 
-    it('registers content type parser for application/json as buffer', () => {
+    it('registers a preParsing hook to capture raw body', () => {
       controller.onApplicationBootstrap();
 
-      expect(mockFastifyInstance.addContentTypeParser).toHaveBeenCalledWith(
-        'application/json',
-        { parseAs: 'buffer' },
-        expect.any(Function),
-      );
+      expect(mockFastifyInstance.addHook).toHaveBeenCalledWith('preParsing', expect.any(Function));
     });
   });
 
@@ -106,7 +105,7 @@ describe('IngestionController', () => {
 
       // Trigger route registration to capture the handler
       controller.onApplicationBootstrap();
-      const handler = mockFastifyInstance.post.mock.calls[0]?.[1];
+      const handler = mockFastifyInstance.post.mock.calls[0]?.[2];
 
       await handler(requestMock, replyMock);
 
@@ -114,7 +113,7 @@ describe('IngestionController', () => {
       expect(replyMock.send).toHaveBeenCalledWith(expectedResult);
       expect(mockIngestionService.ingest).toHaveBeenCalledWith({
         endpointId: 'ep-01JHQ',
-        rawBody: requestMock.body,
+        rawBody: expect.any(Buffer),
         headers: requestMock.headers,
         sourceIp: '10.0.0.1',
         signature: 'sha256=abc123',
@@ -131,7 +130,7 @@ describe('IngestionController', () => {
       });
 
       controller.onApplicationBootstrap();
-      const handler = mockFastifyInstance.post.mock.calls[0]?.[1];
+      const handler = mockFastifyInstance.post.mock.calls[0]?.[2];
 
       await handler(requestMock, replyMock);
 
@@ -144,7 +143,7 @@ describe('IngestionController', () => {
       mockIngestionService.ingest.mockRejectedValue(new NotFoundException('Endpoint not found'));
 
       controller.onApplicationBootstrap();
-      const handler = mockFastifyInstance.post.mock.calls[0]?.[1];
+      const handler = mockFastifyInstance.post.mock.calls[0]?.[2];
 
       await handler(requestMock, replyMock);
 
@@ -155,7 +154,7 @@ describe('IngestionController', () => {
       mockIngestionService.ingest.mockRejectedValue(new BadRequestException('invalid_signature'));
 
       controller.onApplicationBootstrap();
-      const handler = mockFastifyInstance.post.mock.calls[0]?.[1];
+      const handler = mockFastifyInstance.post.mock.calls[0]?.[2];
 
       await handler(requestMock, replyMock);
 
@@ -166,7 +165,7 @@ describe('IngestionController', () => {
       mockIngestionService.ingest.mockRejectedValue(new ConflictException('Endpoint is paused'));
 
       controller.onApplicationBootstrap();
-      const handler = mockFastifyInstance.post.mock.calls[0]?.[1];
+      const handler = mockFastifyInstance.post.mock.calls[0]?.[2];
 
       await handler(requestMock, replyMock);
 
@@ -177,7 +176,7 @@ describe('IngestionController', () => {
       mockIngestionService.ingest.mockRejectedValue(new ServiceUnavailableException('DB failure'));
 
       controller.onApplicationBootstrap();
-      const handler = mockFastifyInstance.post.mock.calls[0]?.[1];
+      const handler = mockFastifyInstance.post.mock.calls[0]?.[2];
 
       await handler(requestMock, replyMock);
 
@@ -193,7 +192,7 @@ describe('IngestionController', () => {
       });
 
       controller.onApplicationBootstrap();
-      const handler = mockFastifyInstance.post.mock.calls[0]?.[1];
+      const handler = mockFastifyInstance.post.mock.calls[0]?.[2];
 
       await handler(requestMock, replyMock);
 
