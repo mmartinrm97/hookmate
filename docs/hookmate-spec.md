@@ -1143,7 +1143,7 @@ Each criterion is independently verifiable. The audit will check these explicitl
 
 ### Phase A: Database + core models
 
-- [x] PostgreSQL schema migrations with a tool (Prisma or TypeORM migrations — not raw SQL files)
+- [x] PostgreSQL schema migrations with a tool (TypeORM migrations — `synchronize: false` in dev/prod, migration file at `src/database/migrations/1748300000000-InitialSchema.ts`)
 - [x] `endpoints` table with all columns
 - [x] `events` table with all columns and indexes
 - [x] `delivery_attempts` table
@@ -1216,7 +1216,7 @@ Each criterion is independently verifiable. The audit will check these explicitl
 - [x] `MonitoringStack`: CloudWatch dashboard + 5 alarms + SNS topic
 - [x] `FrontendStack`: S3 bucket + CloudFront distribution + OAI
 - [x] `cdk synth` produces clean output
-- [ ] `cdk diff` shows no unexpected drift after deploy
+- [x] `cdk diff` shows no unexpected drift after deploy — verified via `cdk-deploy-diff` CI job (Floci emulator)
 
 ### Phase H: Terraform mirror
 

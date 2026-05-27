@@ -267,6 +267,60 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  cdk-deploy-diff:
+    name: CDK Deploy + Drift Check (Floci)
+    needs: [quality, cdk-synth]
+    runs-on: ubuntu-latest
+    services:
+      floci:
+        image: hectorvent/floci:latest
+        ports:
+          - 4566:4566
+        env:
+          FLOCI_DEFAULT_REGION: us-east-1
+          FLOCI_STORAGE_MODE: memory
+    env:
+      AWS_ENDPOINT_URL: http://localhost:4566
+      AWS_DEFAULT_REGION: us-east-1
+      AWS_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build shared types
+        run: pnpm --filter @hookmate/shared build
+
+      - name: Build API (Lambda asset)
+        run: pnpm --filter @hookmate/api build
+
+      - name: Build infrastructure
+        run: pnpm --filter @hookmate/infrastructure build
+
+      - name: CDK Bootstrap (Floci)
+        run: cd infrastructure && npx cdk bootstrap aws://000000000000/us-east-1
+
+      - name: CDK Deploy (Floci)
+        run: cd infrastructure && npx cdk deploy --all --require-approval never
+
+      - name: CDK Diff — assert no drift
+        run: cd infrastructure && npx cdk diff --all --fail
+
   deploy:
     name: Deploy
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
@@ -275,6 +329,7 @@ jobs:
       - unit-tests
       - integration-tests
       - cdk-synth
+      - cdk-deploy-diff
     runs-on: ubuntu-latest
     env:
       AWS_REGION: us-east-1
