@@ -1,4 +1,4 @@
-export type HookMateDeliveryAttemptStatus = 'success' | 'failed' | 'timeout';
+export type HookMateDeliveryAttemptStatus = 'success' | 'failed' | 'timeout' | 'circuit_open';
 
 export interface HookMateDeliveryAttempt {
   id: number;

@@ -27,7 +27,12 @@ export interface DlqCreateInput {
   endpoint_snapshot: Record<string, unknown>;
 }
 
-export type ProcessResultType = 'delivered' | 'failed_retry' | 'dead_lettered' | 'skipped';
+export type ProcessResultType =
+  | 'delivered'
+  | 'failed_retry'
+  | 'dead_lettered'
+  | 'skipped'
+  | 'circuit_open';
 
 export interface ProcessResult {
   status: ProcessResultType;
