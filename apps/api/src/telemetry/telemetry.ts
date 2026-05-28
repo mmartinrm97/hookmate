@@ -28,4 +28,5 @@ export const OtelAttributes = {
   ATTEMPT_NUMBER: 'hookmate.attempt_number',
   MATCH_TYPE: 'hookmate.match_type',
   RULE_ID: 'hookmate.rule_id',
+  CIRCUIT_STATE: 'hookmate.circuit_state',
 } as const;

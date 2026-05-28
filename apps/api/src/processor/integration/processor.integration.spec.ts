@@ -2,6 +2,7 @@ import type { HookMateDeliveryAttempt, HookMateEndpoint, HookMateEvent } from '@
 import { getQueueToken } from '@nestjs/bull';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { CIRCUIT_BREAKER } from '../../circuit-breaker/circuit-breaker.types';
 import { DeliveryAttemptsService } from '../../delivery-attempts/delivery-attempts.service';
 import { DlqAlertService } from '../../dlq-events/dlq-alert.service';
 import { DlqEventsService } from '../../dlq-events/dlq-events.service';
@@ -44,6 +45,9 @@ function createMockEndpoint(overrides: Partial<HookMateEndpoint> = {}): HookMate
     maxRetries: 3,
     retryBaseDelayMs: 5000,
     dlqThreshold: 100,
+    cbFailureThreshold: 0.8,
+    cbWindowSeconds: 300,
+    cbCooldownSeconds: 120,
     createdAt: '2026-01-15T12:00:00Z',
     updatedAt: '2026-01-15T12:00:00Z',
     ...overrides,
@@ -111,6 +115,14 @@ describe('Processor Integration Tests', () => {
         { provide: DlqAlertService, useValue: { publishThresholdAlert: vi.fn() } },
         { provide: SqsService, useValue: mockSqsService },
         { provide: ConfigService, useValue: mockConfigService },
+        {
+          provide: CIRCUIT_BREAKER,
+          useValue: {
+            checkState: vi.fn().mockResolvedValue({ state: 'closed' as const, canProceed: true }),
+            recordSuccess: vi.fn().mockResolvedValue(undefined),
+            recordFailure: vi.fn().mockResolvedValue(undefined),
+          },
+        },
       ],
     }).compile();
 

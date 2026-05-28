@@ -1,17 +1,16 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { Redis } from 'ioredis';
 import { REDIS_CLIENT } from './circuit-breaker.types';
-import type { CircuitCheckResult, CircuitStatus, ICircuitBreaker } from './circuit-breaker.types';
+import type {
+  CbOptions,
+  CircuitCheckResult,
+  CircuitStatus,
+  ICircuitBreaker,
+} from './circuit-breaker.types';
 
 const DEFAULT_FAILURE_THRESHOLD = 0.8;
 const DEFAULT_WINDOW_SECONDS = 300;
 const DEFAULT_COOLDOWN_SECONDS = 120;
-
-export interface CbOptions {
-  failureThreshold: number;
-  windowSeconds: number;
-  cooldownSeconds: number;
-}
 
 function makeWindowKey(endpointId: string): string {
   return `hookmate:cb:window:${endpointId}`;

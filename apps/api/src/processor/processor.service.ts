@@ -1,6 +1,7 @@
 import { InjectQueue } from '@nestjs/bull';
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import type { Queue } from 'bull';
+import { CIRCUIT_BREAKER, ICircuitBreaker } from '../circuit-breaker/circuit-breaker.types';
 import { DeliveryAttemptsService } from '../delivery-attempts/delivery-attempts.service';
 import { EndpointsService } from '../endpoints/endpoints.service';
 import { EventsService } from '../events/events.service';
@@ -27,6 +28,8 @@ export class ProcessorService {
     @InjectQueue('retries')
     private readonly retryQueue: Queue,
     private readonly dlqPromoterService: DlqPromoterService,
+    @Inject(CIRCUIT_BREAKER)
+    private readonly circuitBreaker: ICircuitBreaker,
   ) {}
 
   /**
@@ -74,6 +77,34 @@ export class ProcessorService {
           };
         }
 
+        // Check circuit breaker state
+        const cbResult = await this.circuitBreaker.checkState(endpoint_id);
+        span.setAttribute('hookmate.circuit.state', cbResult.state);
+
+        if (!cbResult.canProceed) {
+          span.setAttribute(OtelAttributes.EVENT_STATUS, 'circuit_open');
+
+          await this.deliveryAttemptsService.create({
+            eventId: event_id,
+            attemptNumber: attempt_number,
+            destinationUrl: endpoint.destinationUrl,
+            httpStatus: null,
+            responseBody: null,
+            latencyMs: 0,
+            status: 'circuit_open' as const,
+          });
+
+          const failureReason = `Circuit open — failure rate exceeded, cooldown ${endpoint.cbCooldownSeconds}s`;
+          await this.dlqPromoterService.promote(event, endpoint, [], failureReason);
+
+          return {
+            status: 'circuit_open' as const,
+            eventId: event_id,
+            endpointId: endpoint_id,
+            attemptNumber: attempt_number,
+          };
+        }
+
         // Evaluate routing rules
         const rules = await this.routingRulesService.getByEndpointId(endpoint_id);
         const destinationUrl = this.routingEvaluatorService.evaluate(
@@ -106,6 +137,7 @@ export class ProcessorService {
 
         // Handle result
         if (deliveryResult.status === 'success') {
+          await this.circuitBreaker.recordSuccess(endpoint_id);
           await this.eventsService.updateStatus(event_id, 'delivered');
           span.setAttribute(OtelAttributes.EVENT_STATUS, 'delivered');
           return {
@@ -115,6 +147,15 @@ export class ProcessorService {
             attemptNumber: attempt_number,
             destinationUrl,
           };
+        }
+
+        // Delivery failed — record in circuit breaker before retry/DLQ decision
+        if (deliveryResult.status === 'failed' || deliveryResult.status === 'timeout') {
+          await this.circuitBreaker.recordFailure(endpoint_id, {
+            failureThreshold: endpoint.cbFailureThreshold ?? 0.8,
+            windowSeconds: endpoint.cbWindowSeconds ?? 300,
+            cooldownSeconds: endpoint.cbCooldownSeconds ?? 120,
+          });
         }
 
         // Delivery failed — decide retry or DLQ
