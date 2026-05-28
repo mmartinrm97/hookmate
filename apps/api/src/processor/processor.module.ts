@@ -1,6 +1,7 @@
 import { BullModule } from '@nestjs/bull';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { CircuitBreakerModule } from '../circuit-breaker/circuit-breaker.module';
 import { DeliveryAttemptsModule } from '../delivery-attempts/delivery-attempts.module';
 import { DlqEventsModule } from '../dlq-events/dlq-events.module';
 import { EndpointsModule } from '../endpoints/endpoints.module';
@@ -33,6 +34,7 @@ import { SqsConsumerService } from './sqs-consumer.service';
     DeliveryAttemptsModule,
     DlqEventsModule,
     RoutingRulesModule,
+    CircuitBreakerModule,
   ],
   providers: [
     ProcessorService,
