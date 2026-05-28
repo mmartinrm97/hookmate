@@ -1,12 +1,12 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { Redis } from 'ioredis';
-import { REDIS_CLIENT } from './circuit-breaker.types';
 import type {
   CbOptions,
   CircuitCheckResult,
   CircuitStatus,
   ICircuitBreaker,
 } from './circuit-breaker.types';
+import { REDIS_CLIENT } from './circuit-breaker.types';
 
 const DEFAULT_FAILURE_THRESHOLD = 0.8;
 const DEFAULT_WINDOW_SECONDS = 300;
