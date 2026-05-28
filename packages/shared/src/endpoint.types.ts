@@ -9,6 +9,9 @@ export interface HookMateEndpoint {
   maxRetries: number;
   retryBaseDelayMs: number;
   dlqThreshold: number;
+  cbFailureThreshold?: number;
+  cbWindowSeconds?: number;
+  cbCooldownSeconds?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -20,6 +23,9 @@ export interface CreateHookMateEndpointInput {
   maxRetries?: number;
   retryBaseDelayMs?: number;
   dlqThreshold?: number;
+  cbFailureThreshold?: number;
+  cbWindowSeconds?: number;
+  cbCooldownSeconds?: number;
 }
 
 export interface UpdateHookMateEndpointInput {
@@ -29,4 +35,7 @@ export interface UpdateHookMateEndpointInput {
   maxRetries?: number;
   retryBaseDelayMs?: number;
   dlqThreshold?: number;
+  cbFailureThreshold?: number;
+  cbWindowSeconds?: number;
+  cbCooldownSeconds?: number;
 }

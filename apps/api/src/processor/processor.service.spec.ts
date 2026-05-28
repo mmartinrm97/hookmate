@@ -8,6 +8,7 @@ import { NotFoundException } from '@nestjs/common';
 import { getQueueToken } from '@nestjs/bull';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { CIRCUIT_BREAKER } from '../circuit-breaker/circuit-breaker.types';
 import { DeliveryAttemptsService } from '../delivery-attempts/delivery-attempts.service';
 import { EndpointsService } from '../endpoints/endpoints.service';
 import { EventsService } from '../events/events.service';
@@ -44,6 +45,9 @@ function createMockEndpoint(overrides: Partial<HookMateEndpoint> = {}): HookMate
     maxRetries: 5,
     retryBaseDelayMs: 5000,
     dlqThreshold: 100,
+    cbFailureThreshold: 0.8,
+    cbWindowSeconds: 300,
+    cbCooldownSeconds: 120,
     createdAt: '2026-01-15T12:00:00Z',
     updatedAt: '2026-01-15T12:00:00Z',
     ...overrides,
@@ -93,6 +97,11 @@ describe('ProcessorService', () => {
   let mockDlqPromoterService: {
     promote: ReturnType<typeof vi.fn>;
   };
+  let mockCircuitBreaker: {
+    checkState: ReturnType<typeof vi.fn>;
+    recordSuccess: ReturnType<typeof vi.fn>;
+    recordFailure: ReturnType<typeof vi.fn>;
+  };
 
   beforeEach(async () => {
     mockEventsService = {
@@ -117,6 +126,11 @@ describe('ProcessorService', () => {
     mockDlqPromoterService = {
       promote: vi.fn(),
     };
+    mockCircuitBreaker = {
+      checkState: vi.fn().mockResolvedValue({ state: 'closed' as const, canProceed: true }),
+      recordSuccess: vi.fn().mockResolvedValue(undefined),
+      recordFailure: vi.fn().mockResolvedValue(undefined),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -129,6 +143,7 @@ describe('ProcessorService', () => {
         { provide: DeliveryService, useValue: mockDeliveryService },
         { provide: getQueueToken('retries'), useValue: mockQueue },
         { provide: DlqPromoterService, useValue: mockDlqPromoterService },
+        { provide: CIRCUIT_BREAKER, useValue: mockCircuitBreaker },
       ],
     }).compile();
 

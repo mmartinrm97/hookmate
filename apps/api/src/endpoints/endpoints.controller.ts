@@ -18,6 +18,11 @@ import {
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
+import {
+  CIRCUIT_BREAKER,
+  CircuitStatus,
+  ICircuitBreaker,
+} from '../circuit-breaker/circuit-breaker.types';
 import { CreateEndpointDto } from './dto/create-endpoint.dto';
 import { UpdateEndpointDto } from './dto/update-endpoint.dto';
 import { EndpointsService } from './endpoints.service';
@@ -25,7 +30,10 @@ import { EndpointsService } from './endpoints.service';
 @ApiTags('endpoints')
 @Controller({ path: 'endpoints', version: '1' })
 export class EndpointsController {
-  constructor(@Inject(EndpointsService) private readonly endpointsService: EndpointsService) {}
+  constructor(
+    @Inject(EndpointsService) private readonly endpointsService: EndpointsService,
+    @Inject(CIRCUIT_BREAKER) private readonly circuitBreaker: ICircuitBreaker,
+  ) {}
 
   @ApiOperation({ summary: 'List registered webhook endpoints' })
   @ApiOkResponse({ description: 'Current endpoints list.' })
@@ -78,5 +86,21 @@ export class EndpointsController {
   @Patch(':id/resume')
   async resume(@Param('id') id: string): Promise<HookMateEndpoint> {
     return this.endpointsService.resume(id);
+  }
+
+  @ApiOperation({ summary: 'Get circuit breaker status for endpoint' })
+  @ApiOkResponse({ description: 'Circuit breaker state and metrics.' })
+  @Get(':id/circuit')
+  async getCircuitStatus(@Param('id') id: string): Promise<CircuitStatus> {
+    return this.circuitBreaker.getStatus(id);
+  }
+
+  @ApiOperation({ summary: 'Reset circuit breaker for endpoint' })
+  @ApiOkResponse({ description: 'Circuit breaker reset.' })
+  @HttpCode(HttpStatus.OK)
+  @Post(':id/circuit/reset')
+  async resetCircuit(@Param('id') id: string): Promise<{ ok: boolean }> {
+    await this.circuitBreaker.reset(id);
+    return { ok: true };
   }
 }
