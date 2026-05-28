@@ -1,6 +1,7 @@
 import { CfnOutput, Duration, Stack, type StackProps } from 'aws-cdk-lib';
 import { type IVpc, SubnetType } from 'aws-cdk-lib/aws-ec2';
 import { type IFunction, Function, Code, Runtime, Tracing } from 'aws-cdk-lib/aws-lambda';
+import { SqsEventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
 import { type ISecret } from 'aws-cdk-lib/aws-secretsmanager';
 import { type IQueue } from 'aws-cdk-lib/aws-sqs';
 import { Construct } from 'constructs';
@@ -148,6 +149,16 @@ export class ComputeStack extends Stack {
     dlq.grantConsumeMessages(this.dlqLambda);
     // DLQ: needs DB access
     dbSecret.grantRead(this.dlqLambda);
+
+    // DLQ: SQS event source mapping — triggers on DLQ messages
+    // Batch size of 1 ensures each DLQ event is processed individually,
+    // making it easier to track which events succeeded/failed.
+    this.dlqLambda.addEventSource(
+      new SqsEventSource(dlq, {
+        batchSize: 1,
+        reportBatchItemFailures: true, // enables partial failure reporting
+      }),
+    );
 
     // --- AI Lambda ---
     // Triggered by EventBridge Scheduler every 30 minutes. Aggregates events
