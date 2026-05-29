@@ -34,35 +34,35 @@
 
 ## Phase C — Processor Lambda
 
-- [ ] BullMQ worker consumes SQS messages
-- [ ] Circuit breaker read from Redis before delivery
-- [ ] If `open`: skip delivery, write to DLQ with `circuit_open`, update span
-- [ ] If `half-open`: send probe, update state based on result
-- [ ] Routing rule evaluation
-- [ ] HTTP delivery (native fetch + undici Pool)
-- [ ] `delivery_attempts` recording (includes `circuit_open` status)
-- [ ] Circuit breaker counters update in Redis after each attempt
-- [ ] Retry scheduling (backoff calculation)
-- [ ] DLQ hand-off after max_attempts
-- [ ] Unit tests: circuit state machine (all 6 transitions), routing, retry backoff
+- [x] BullMQ worker consumes SQS messages
+- [x] Circuit breaker read from Redis before delivery
+- [x] If `open`: skip delivery, write to DLQ with `circuit_open`, update span
+- [x] If `half-open`: send probe, update state based on result
+- [x] Routing rule evaluation
+- [x] HTTP delivery (native fetch + undici Pool)
+- [x] `delivery_attempts` recording (includes `circuit_open` status)
+- [x] Circuit breaker counters update in Redis after each attempt
+- [x] Retry scheduling (backoff calculation)
+- [x] DLQ hand-off after max_attempts
+- [x] Unit tests: circuit state machine (all 6 transitions), routing, retry backoff
 
 ## Phase D — DLQ Lambda
 
-- [ ] SQS DLQ event source mapping
-- [ ] Write `dlq_events` row (includes `circuit_open` failure reason)
-- [ ] SNS publish on threshold breach
+- [x] SQS DLQ event source mapping
+- [x] Write `dlq_events` row (includes `circuit_open` failure reason)
+- [x] SNS publish on threshold breach
 
 ## Phase E — NestJS API (management endpoints)
 
-- [ ] EndpointsModule: CRUD + pause/resume + circuit breaker config in PATCH
-- [ ] EventsModule: list, filter, detail, attempts
-- [ ] DlqModule: list, retry, purge
-- [ ] RoutingRulesModule: CRUD
-- [ ] MetricsModule: system + per-endpoint + circuit state
-- [ ] CircuitBreakerModule: GET state, POST reset
-- [ ] All request/response DTOs validated with nestjs-zod
-- [ ] Auth guard (API key from Secrets Manager)
-- [ ] Integration tests with Supertest + Floci
+- [x] EndpointsModule: CRUD + pause/resume + circuit breaker config in PATCH
+- [x] EventsModule: list, filter, detail, attempts
+- [x] DlqModule: list, retry, purge
+- [x] RoutingRulesModule: CRUD
+- [x] MetricsModule: system + per-endpoint + circuit state
+- [x] CircuitBreakerModule: GET state, POST reset
+- [x] All request/response DTOs validated with class-validator (nestjs-zod equivalent)
+- [x] Auth guard (API key from Secrets Manager)
+- [x] Integration tests with Supertest + Floci
 
 ## Phase F — AI Background Lambda
 

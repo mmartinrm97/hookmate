@@ -1,6 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { CIRCUIT_BREAKER, ICircuitBreaker } from '../circuit-breaker/circuit-breaker.types';
 import { DeliveryAttempt } from '../delivery-attempts/entities/delivery-attempt.entity';
 import { DlqEvent } from '../dlq-events/entities/dlq-event.entity';
 import { EndpointsService } from '../endpoints/endpoints.service';
@@ -41,6 +42,8 @@ export class MetricsService {
     @InjectRepository(DeliveryAttempt)
     private readonly deliveryAttemptRepo: Repository<DeliveryAttempt>,
     private readonly endpointsService: EndpointsService,
+    @Inject(CIRCUIT_BREAKER)
+    private readonly circuitBreaker: ICircuitBreaker,
   ) {}
 
   async systemMetrics(): Promise<SystemMetricsDto> {
@@ -61,12 +64,14 @@ export class MetricsService {
     const dlqDepth = await this.dlqRepo.count();
     const failedCount = (byStatus['failed'] ?? 0) + (byStatus['dead_lettered'] ?? 0);
     const errorRate = totalEvents > 0 ? failedCount / totalEvents : 0;
+    const openCircuits = await this.circuitBreaker.countOpenCircuits();
 
     return {
       totalEvents,
       byStatus,
       dlqDepth,
       errorRate,
+      openCircuits,
     };
   }
 

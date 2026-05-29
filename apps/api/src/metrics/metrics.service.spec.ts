@@ -2,6 +2,7 @@ import { NotFoundException } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { CIRCUIT_BREAKER } from '../circuit-breaker/circuit-breaker.types';
 import { EndpointsService } from '../endpoints/endpoints.service';
 import { DeliveryAttempt } from '../delivery-attempts/entities/delivery-attempt.entity';
 import { DlqEvent } from '../dlq-events/entities/dlq-event.entity';
@@ -22,12 +23,16 @@ describe('MetricsService', () => {
   let mockEndpointsService: {
     getById: ReturnType<typeof vi.fn>;
   };
+  let mockCircuitBreaker: {
+    countOpenCircuits: ReturnType<typeof vi.fn>;
+  };
 
   beforeEach(async () => {
     mockEventRepo = { createQueryBuilder: vi.fn() };
     mockDlqRepo = { count: vi.fn() };
     mockDeliveryAttemptRepo = { createQueryBuilder: vi.fn() };
     mockEndpointsService = { getById: vi.fn() };
+    mockCircuitBreaker = { countOpenCircuits: vi.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -36,6 +41,7 @@ describe('MetricsService', () => {
         { provide: getRepositoryToken(DlqEvent), useValue: mockDlqRepo },
         { provide: getRepositoryToken(DeliveryAttempt), useValue: mockDeliveryAttemptRepo },
         { provide: EndpointsService, useValue: mockEndpointsService },
+        { provide: CIRCUIT_BREAKER, useValue: mockCircuitBreaker },
       ],
     }).compile();
 
@@ -58,6 +64,7 @@ describe('MetricsService', () => {
       };
       mockEventRepo.createQueryBuilder.mockReturnValue(mockQb);
       mockDlqRepo.count.mockResolvedValue(2);
+      mockCircuitBreaker.countOpenCircuits.mockResolvedValue(3);
 
       const result = await service.systemMetrics();
 
@@ -71,6 +78,7 @@ describe('MetricsService', () => {
       });
       expect(result.dlqDepth).toBe(2);
       expect(result.errorRate).toBeCloseTo(0.05, 2); // (3+2)/100
+      expect(result.openCircuits).toBe(3);
       expect(mockEventRepo.createQueryBuilder).toHaveBeenCalledWith('event');
     });
 
@@ -83,6 +91,7 @@ describe('MetricsService', () => {
       };
       mockEventRepo.createQueryBuilder.mockReturnValue(mockQb);
       mockDlqRepo.count.mockResolvedValue(0);
+      mockCircuitBreaker.countOpenCircuits.mockResolvedValue(0);
 
       const result = await service.systemMetrics();
 
@@ -90,6 +99,7 @@ describe('MetricsService', () => {
       expect(result.byStatus).toEqual({});
       expect(result.dlqDepth).toBe(0);
       expect(result.errorRate).toBe(0);
+      expect(result.openCircuits).toBe(0);
     });
   });
 

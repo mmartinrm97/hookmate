@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { CircuitBreakerModule } from '../circuit-breaker/circuit-breaker.module';
 import { DeliveryAttemptsModule } from '../delivery-attempts/delivery-attempts.module';
 import { DlqEventsModule } from '../dlq-events/dlq-events.module';
 import { EndpointsModule } from '../endpoints/endpoints.module';
@@ -14,6 +15,7 @@ import { MetricsSseHandler } from './sse/metrics-sse.handler';
 @Module({
   imports: [
     TypeOrmModule.forFeature([Event, DlqEvent, DeliveryAttempt]),
+    CircuitBreakerModule,
     EndpointsModule,
     EventsModule,
     DlqEventsModule,

@@ -27,4 +27,5 @@ export interface ICircuitBreaker {
   recordFailure(endpointId: string, options?: CbOptions): Promise<void>;
   reset(endpointId: string): Promise<void>;
   getStatus(endpointId: string): Promise<CircuitStatus>;
+  countOpenCircuits(): Promise<number>;
 }

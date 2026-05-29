@@ -155,4 +155,19 @@ export class RedisCircuitBreakerService implements ICircuitBreaker {
       cooldownRemainingSeconds,
     };
   }
+
+  async countOpenCircuits(): Promise<number> {
+    try {
+      const keys = await this.redis.keys('hookmate:cb:state:*');
+      if (keys.length === 0) {
+        return 0;
+      }
+
+      const states = await this.redis.mget(keys);
+      return states.filter((s) => s === 'open').length;
+    } catch (error) {
+      this.logger.warn(`Failed to count open circuits: ${(error as Error).message}`);
+      return 0;
+    }
+  }
 }

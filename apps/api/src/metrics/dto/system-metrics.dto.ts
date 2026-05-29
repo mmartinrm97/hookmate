@@ -3,4 +3,5 @@ export interface SystemMetricsDto {
   byStatus: Record<string, number>;
   dlqDepth: number;
   errorRate: number;
+  openCircuits: number;
 }

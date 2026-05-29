@@ -12,6 +12,8 @@ const mockRedis = {
   zremrangebyscore: vi.fn(),
   expire: vi.fn(),
   ttl: vi.fn(),
+  keys: vi.fn(),
+  mget: vi.fn(),
 };
 
 function createService(): RedisCircuitBreakerService {
@@ -273,6 +275,48 @@ describe('RedisCircuitBreakerService', () => {
       const now = Date.now();
       const expectedCutoff = now - 300 * 1000;
       expect(mockRedis.zremrangebyscore).toHaveBeenCalledWith(windowKey, '-inf', expectedCutoff);
+    });
+  });
+
+  describe('countOpenCircuits()', () => {
+    it('returns 0 when no circuit state keys exist', async () => {
+      mockRedis.keys.mockResolvedValue([]);
+
+      const result = await createService().countOpenCircuits();
+
+      expect(result).toBe(0);
+      expect(mockRedis.keys).toHaveBeenCalledWith('hookmate:cb:state:*');
+      expect(mockRedis.mget).not.toHaveBeenCalled();
+    });
+
+    it('counts only keys with open state', async () => {
+      mockRedis.keys.mockResolvedValue([
+        'hookmate:cb:state:ep-1',
+        'hookmate:cb:state:ep-2',
+        'hookmate:cb:state:ep-3',
+      ]);
+      mockRedis.mget.mockResolvedValue(['open', 'closed', 'open']);
+
+      const result = await createService().countOpenCircuits();
+
+      expect(result).toBe(2);
+    });
+
+    it('returns 0 when all circuits are closed', async () => {
+      mockRedis.keys.mockResolvedValue(['hookmate:cb:state:ep-1', 'hookmate:cb:state:ep-2']);
+      mockRedis.mget.mockResolvedValue(['closed', 'half-open']);
+
+      const result = await createService().countOpenCircuits();
+
+      expect(result).toBe(0);
+    });
+
+    it('fails gracefully on Redis error (returns 0)', async () => {
+      mockRedis.keys.mockRejectedValue(new Error('Connection refused'));
+
+      const result = await createService().countOpenCircuits();
+
+      expect(result).toBe(0);
     });
   });
 });

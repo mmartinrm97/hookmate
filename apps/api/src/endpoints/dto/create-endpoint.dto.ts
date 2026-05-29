@@ -40,4 +40,24 @@ export class CreateEndpointDto implements CreateHookMateEndpointInput {
   @IsString()
   @MaxLength(255)
   secret?: string;
+
+  @ApiPropertyOptional({ example: 0.8, default: 0.8, description: 'Failure rate threshold (0-1)' })
+  @IsOptional()
+  @Type(() => Number)
+  @Min(0)
+  cbFailureThreshold?: number;
+
+  @ApiPropertyOptional({ example: 300, default: 300, description: 'Sliding window in seconds' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(60)
+  cbWindowSeconds?: number;
+
+  @ApiPropertyOptional({ example: 120, default: 120, description: 'Cooldown period in seconds' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(30)
+  cbCooldownSeconds?: number;
 }

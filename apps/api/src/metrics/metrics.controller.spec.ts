@@ -34,6 +34,7 @@ describe('MetricsController', () => {
         byStatus: { delivered: 80, failed: 3, received: 10, processing: 5, dead_lettered: 2 },
         dlqDepth: 2,
         errorRate: 0.05,
+        openCircuits: 1,
       };
       mockService.systemMetrics.mockResolvedValue(expected);
 
