@@ -66,12 +66,12 @@
 
 ## Phase F — AI Background Lambda
 
-- [ ] EventBridge trigger every 30min
-- [ ] Query events for last 24h per endpoint (Drizzle query)
-- [ ] Vercel AI SDK `generateText` for summary
-- [ ] Vercel AI SDK `generateObject` + Zod schema for per-event classification (structured output)
-- [ ] Upsert `ai_summaries`, update `events.category`
-- [ ] Error handling: try/catch, log only
+- [x] EventBridge trigger every 30min
+- [x] Query events for last 24h per endpoint (TypeORM query)
+- [x] AI SDK `generateText` for summary (OpenAI gpt-4o-mini)
+- [x] AI SDK `generateText` + JSON parsing for per-event classification
+- [x] Upsert `ai_summaries`, update `events.category`
+- [x] Error handling: try/catch, log only
 
 ## Phase G — CDK Infrastructure
 
