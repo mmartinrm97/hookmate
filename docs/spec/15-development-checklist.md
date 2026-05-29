@@ -115,13 +115,13 @@
 
 ## Phase K — Documentation
 
-- [ ] `README.md` updated with architecture diagram, local dev steps, live demo URL
-- [ ] `docs/architecture.md` written
-- [ ] `docs/runbook.md` written
-- [ ] `docs/cost-analysis.md` written (after first real deploy)
-- [ ] `docs/decisions/001-sqs-plus-bullmq.md` written
-- [ ] `docs/decisions/002-drizzle-over-typeorm.md` written
-- [ ] `docs/decisions/003-cdk-primary-terraform-mirror.md` written
-- [ ] `docs/decisions/004-circuit-breaker-in-redis.md` written
-- [ ] `terraform/COMPARISON.md` written
-- [ ] Live demo seed script seeds 50 events, 3 endpoints, 2 routing rules
+- [x] `README.md` updated with architecture diagram, local dev steps, live demo URL
+- [x] `docs/architecture.md` written
+- [x] `docs/runbook.md` written
+- [x] `docs/cost-analysis.md` written (after first real deploy)
+- [x] `docs/decisions/001-sqs-plus-bullmq.md` written
+- [x] `docs/decisions/002-typeorm-for-database.md` written
+- [x] `docs/decisions/003-cdk-primary-terraform-mirror.md` written
+- [x] `docs/decisions/004-circuit-breaker-in-redis.md` written
+- [x] `terraform/COMPARISON.md` written
+- [x] Live demo seed script seeds 50 events, 3 endpoints, 2 routing rules

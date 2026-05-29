@@ -1,5 +1,5 @@
 /**
- * Seed script: creates 1 test endpoint + 20 test events in various statuses.
+ * Seed script: creates 3 test endpoints + 50 test events + 2 routing rules.
  *
  * Usage:
  *   pnpm --filter @hookmate/api exec ts-node scripts/seed.ts
@@ -39,33 +39,74 @@ async function seed() {
   );
   console.log('🧹 Cleared existing data');
 
-  // Create test endpoint
-  const endpoint = endpointRepo.create({
-    name: 'Test Endpoint',
-    destinationUrl: 'https://webhook.site/test-123',
-    secret: 'test-secret-key',
-    status: 'active',
-    maxRetries: 5,
-    retryBaseDelayMs: 5000,
-    dlqThreshold: 100,
-  });
-  await endpointRepo.save(endpoint);
-  console.log(`✅ Created endpoint: ${endpoint.id}`);
+  // Create 3 test endpoints
+  const endpoints = [
+    {
+      name: 'GitHub Webhooks',
+      destinationUrl: 'https://webhook.site/github-123',
+      secret: 'whsec_github_secret',
+      status: 'active' as const,
+      maxRetries: 5,
+      retryBaseDelayMs: 5000,
+      dlqThreshold: 100,
+    },
+    {
+      name: 'Stripe Payments',
+      destinationUrl: 'https://webhook.site/stripe-456',
+      secret: 'whsec_stripe_secret',
+      status: 'active' as const,
+      maxRetries: 3,
+      retryBaseDelayMs: 10000,
+      dlqThreshold: 50,
+    },
+    {
+      name: 'Shopify Orders',
+      destinationUrl: 'https://webhook.site/shopify-789',
+      secret: 'whsec_shopify_secret',
+      status: 'active' as const,
+      maxRetries: 5,
+      retryBaseDelayMs: 5000,
+      dlqThreshold: 100,
+    },
+  ];
 
-  // Create routing rule
-  const rule = ruleRepo.create({
-    endpointId: endpoint,
-    priority: 1,
-    matchType: 'header',
-    matchKey: 'x-event-type',
-    matchValue: 'payment',
-    destinationType: 'http',
-    destinationUrl: 'https://webhook.site/test-123',
-  });
-  await ruleRepo.save(rule);
-  console.log(`✅ Created routing rule: ${rule.id}`);
+  const savedEndpoints: Endpoint[] = [];
+  for (const ep of endpoints) {
+    const endpoint = endpointRepo.create(ep);
+    await endpointRepo.save(endpoint);
+    savedEndpoints.push(endpoint);
+    console.log(`✅ Created endpoint: ${endpoint.name} (${endpoint.id})`);
+  }
 
-  // Create 20 test events with various statuses
+  // Create 2 routing rules
+  const rules = [
+    {
+      endpointId: savedEndpoints[0],
+      priority: 1,
+      matchType: 'header' as const,
+      matchKey: 'x-event-type',
+      matchValue: 'payment',
+      destinationType: 'http' as const,
+      destinationUrl: 'https://webhook.site/payments',
+    },
+    {
+      endpointId: savedEndpoints[1],
+      priority: 1,
+      matchType: 'json_path' as const,
+      matchKey: '$.type',
+      matchValue: 'invoice',
+      destinationType: 'http' as const,
+      destinationUrl: 'https://webhook.site/invoices',
+    },
+  ];
+
+  for (const ruleData of rules) {
+    const rule = ruleRepo.create(ruleData);
+    await ruleRepo.save(rule);
+    console.log(`✅ Created routing rule: ${rule.matchKey} → ${rule.destinationUrl}`);
+  }
+
+  // Create 50 test events with various statuses across all endpoints
   const statuses: Array<'received' | 'processing' | 'delivered' | 'failed' | 'dead_lettered'> = [
     'delivered',
     'delivered',
@@ -75,24 +116,55 @@ async function seed() {
     'delivered',
     'delivered',
     'delivered',
+    'delivered',
+    'delivered',
+    'delivered',
+    'delivered',
+    'delivered',
+    'delivered',
+    'delivered',
+    'delivered',
+    'delivered',
+    'delivered',
+    'delivered',
+    'delivered',
+    'processing',
+    'processing',
     'processing',
     'processing',
     'processing',
     'failed',
     'failed',
+    'failed',
     'received',
     'received',
+    'received',
+    'received',
+    'received',
+    'dead_lettered',
     'dead_lettered',
     'delivered',
     'delivered',
     'delivered',
     'delivered',
+    'delivered',
+    'delivered',
+    'delivered',
+    'delivered',
+    'delivered',
+    'delivered',
+    'failed',
+    'failed',
+    'processing',
+    'processing',
+    'received',
   ];
 
   const categories = ['payment', 'user.signup', 'order.created', 'notification', 'system'];
   const events: Event[] = [];
 
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < 50; i++) {
+    const endpoint = savedEndpoints[i % savedEndpoints.length];
     const event = eventRepo.create({
       endpointId: endpoint,
       payload: {
@@ -105,7 +177,7 @@ async function seed() {
         'x-event-type': categories[i % categories.length],
         'x-request-id': `req-${String(i + 1).padStart(3, '0')}`,
       },
-      sourceIp: `192.168.1.${100 + i}`,
+      sourceIp: `192.168.1.${100 + (i % 50)}`,
       status: statuses[i],
       category: categories[i % categories.length],
       traceId: `trace-${String(i + 1).padStart(3, '0')}-ulid`,
