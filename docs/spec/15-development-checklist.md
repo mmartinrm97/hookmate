@@ -109,9 +109,9 @@
 
 ## Phase J — GitHub Actions
 
-- [ ] `ci.yml`: lint → test → CDK synth → infracost → deploy (main only)
-- [ ] Infracost action configured with `INFRACOST_API_KEY` secret
-- [ ] OIDC permissions or IAM key secrets configured
+- [x] `ci.yml`: lint → test → CDK synth → infracost → deploy (main only)
+- [x] Infracost action configured with `INFRACOST_API_KEY` secret
+- [x] IAM key secrets configured (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`)
 
 ## Phase K — Documentation
 

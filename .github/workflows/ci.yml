@@ -220,6 +220,64 @@ jobs:
           path: infrastructure/cdk.out/
           retention-days: 3
 
+  infracost:
+    name: Infracost
+    if: github.event_name == 'pull_request'
+    needs: [cdk-synth]
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    env:
+      AWS_REGION: us-east-1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build shared types
+        run: pnpm --filter @hookmate/shared build
+
+      - name: Build API (Lambda asset)
+        run: pnpm --filter @hookmate/api build
+
+      - name: Download CDK output
+        uses: actions/download-artifact@v4
+        with:
+          name: cdk-out
+          path: infrastructure/cdk.out/
+
+      - name: Setup Infracost
+        uses: infracost/actions/setup@v3
+        with:
+          api-key: ${{ secrets.INFRACOST_API_KEY }}
+
+      - name: Infracost diff
+        id: infracost
+        run: |
+          infracost breakdown --path infrastructure/cdk.out \
+            --format json \
+            --out-file /tmp/infracost.json
+
+      - name: Post Infracost comment
+        run: |
+          infracost comment --path /tmp/infracost.json \
+            --github-token=${{ secrets.GITHUB_TOKEN }} \
+            --github-repo=${{ github.repository }} \
+            --github-pull-request=${{ github.event.pull_request.number }} \
+            --behavior=new
+
   cdk-diff:
     name: CDK Diff
     if: github.event_name == 'pull_request'
